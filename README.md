@@ -52,6 +52,18 @@ grand-cinema-docs/
 
 > L'arborescence est indicative et sera ajustée selon les attendus exacts de chaque énoncé.
 
+## 📝 Où trouver les réponses des blocs
+
+Les copies à rendre se trouvent dans le dossier **`Bloc 1/Réponses Bloc 1 2 & 3/`** :
+
+| Bloc | Fichier |
+|---|---|
+| Bloc 1 | `Bloc 1/Réponses Bloc 1 2 & 3/Bloc 1_Concevoir et spécifier une solution digitale.docx` |
+| Bloc 2 | `Bloc 1/Réponses Bloc 1 2 & 3/Copiearendre_Bachelor Developpeur Application_Bloc 2_Gestion pilotage et testing d'une solution digitale (1).odt` |
+| Bloc 3 | _À venir_ |
+
+La version Markdown de travail des réponses du Bloc 1 est disponible dans `Bloc 1/exam_bloc_1_answer.md`.
+
 ## ✅ Avancement
 
 | Bloc | Intitulé | Statut |
