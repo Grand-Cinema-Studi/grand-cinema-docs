@@ -7,6 +7,7 @@ Une ligne par livrable : quoi, où, état. Les détails restent dans les fichier
 **Organisation GitHub :** `Grand-Cinema-Studi` (type : Organization)
 **Project :** `Grand Cinema Backlog` — n° 3 — https://github.com/orgs/Grand-Cinema-Studi/projects/3
 **Dépôts :** `grand-cinema-docs` · `grand-cinema-backend` · `grand-cinema-frontend`
+**Dossier local :** `STUDI/Grand Cinema App/` (un sous-dossier par dépôt ; `grand-cinema-docs` est cloné et à jour)
 
 ---
 
@@ -14,7 +15,7 @@ Une ligne par livrable : quoi, où, état. Les détails restent dans les fichier
 
 | Échéance | Attendu | État |
 | :--- | :--- | :--- |
-| Mardi 20 octobre 2026 | 1er dépôt Blocs 1, 2 et 3 (retours jurys) | En cours |
+| Mardi 20 octobre 2026 | 1er dépôt Blocs 1, 2 et 3 (retours jurys) | En cours — Bloc 1 rédigé, Blocs 2 et 3 à produire |
 | Vendredi 20 novembre 2026 | Dépôt final obligatoire + vidéos | À venir |
 | Mardi 24 novembre 2026 | Vidéos de réponse aux formateurs | À venir |
 
@@ -26,13 +27,13 @@ Une ligne par livrable : quoi, où, état. Les détails restent dans les fichier
 | :--- | :--- | :--- | :--- |
 | **1** | 1 — La demande du client | Q1 — Demande, objectifs, utilisateurs, besoins | ✅ Rédigée et intégrée au .docx |
 | **1** | 1 — La demande du client | Q2 — Périmètre MVP et justifications | ✅ Rédigée et intégrée au .docx |
-| **1** | 2 — Les solutions | Q1 — Lister les solutions | ⬜ À faire |
-| **1** | 2 — Les solutions | Q2 — Utilisables ou non, justifier | ⬜ À faire |
-| **1** | 2 — Les solutions | Q3 — Coût de mise en place | ⬜ À faire |
-| **1** | 3 — L'architecture | Q1 — Justifier le choix d'hébergement | ⬜ À faire |
-| **1** | 3 — L'architecture | Q2 — Schéma d'architecture logicielle | ⬜ À faire |
-| **1** | 3 — L'architecture | Q3 — Justifier le choix d'architecture | ⬜ À faire |
-| **2** | — | Backlog, plan de recette, tests | ⬜ À faire |
+| **1** | 2 — Les solutions | Q1 — Lister les solutions | ✅ Rédigée (3 familles : SaaS, CMS, sur-mesure) |
+| **1** | 2 — Les solutions | Q2 — Utilisables ou non, justifier | ✅ Rédigée |
+| **1** | 2 — Les solutions | Q3 — Coût de mise en place | 🟨 Rédigée, à équilibrer : chiffrage détaillé seulement pour la Famille C (sur-mesure) ; A et B uniquement dans le tableau comparatif |
+| **1** | 3 — L'architecture | Q1 — Justifier le choix d'hébergement | ✅ Rédigée (AWS, région Paris, 4 critères) |
+| **1** | 3 — L'architecture | Q2 — Schéma d'architecture logicielle | 🟨 Schéma inséré, à reprendre (thème clair, flèche Stripe depuis la couche applicative, verrou anti-surbooking visible) |
+| **1** | 3 — L'architecture | Q3 — Justifier le choix d'architecture | ✅ Rédigée (modularité, TMA, conduite du changement) |
+| **2** | — | Backlog, plan de recette, tests | 🟨 Backlog GitHub fait (4 EPICs, 12 US, 97 pts) ; plan de recette, tests et anomalies à faire (gabarit `Bloc 2/` encore vide) |
 | **3** | — | Développement, API, BDD, sécurité | ⬜ À faire |
 
 ---
@@ -62,7 +63,7 @@ besoin → code que Trello ne permet pas.
 
 Livrable : `tuto_github_epics.md` — tutoriel complet couvrant la création du Project, la préparation des
 3 dépôts, les labels, les 4 EPICs et 12 User Stories entièrement rédigés et prêts à coller, la
-décomposition en tâches techniques, un script PowerShell d'automatisation, les vues du Project et la
+décomposition en tâches techniques, un script d'automatisation (converti en Bash le 20 septembre), les vues du Project et la
 checklist de conformité jury. Double méthode : interface web et `gh` CLI.
 
 **État : tutoriel rédigé, exécution sur GitHub pas encore faite.**
@@ -95,6 +96,42 @@ et les 3 dépôts doivent être publics, sinon le correcteur tombe sur un 404.
 
 ---
 
+## Octobre 2026
+
+### Réorganisation du dossier et synchronisation Git (7-8 octobre)
+
+Le dossier local est réorganisé sous `STUDI/Grand Cinema App/grand-cinema-docs/` :
+`1 - Conception…`, `2 - Gestion…`, `3 - Développement…` (cours Studi récupérés tels quels, environ 250 PDF),
+`Énoncés/` (2 PDF officiels), `Réponses Bloc 1 2 & 3/` (un sous-dossier par bloc) et `TEST_CODES/`.
+Les anciens brouillons (`exam_bloc_1_answer.md`, `planning_bloc1_fasttrack.md`, dossier `backlog/`) ont été supprimés volontairement.
+
+Piège rencontré : `git pull` échouait sur Windows (`error: invalid path`) car des dossiers de cours contenaient
+un `:` (« Agile : Scrum », « Agile : Kanban »), caractère interdit par NTFS. Dossiers renommés avec un tiret ;
+le pull passe. **Règle : pas de `:` ni `? * " < > |` dans les noms de fichiers du dépôt.**
+
+### Relecture du livrable Bloc 1 (7 octobre, lecture seule)
+
+Les 8 questions sont toutes rédigées dans le .docx (~3 800 mots, 11 tableaux, 1 schéma d'architecture).
+Points à reprendre avant le 20 octobre :
+
+- **D2 Q3** : chiffrer aussi les Familles A (commissions par billet) et B (licences, plugins, maintenance), sur une base comparable.
+- **D3 Q2** : schéma en thème clair, flèche Stripe partant de la couche applicative (pas de la base), verrou anti-surbooking visible, cohérence avec « architecture modulaire » de la Q3.
+- **Poids du fichier (10,9 Mo)** : 7 polices incorporées ; décocher « Incorporer les polices » dans Word.
+- Paragraphes vides en fin de réponses à nettoyer. La mention « Trello » restante vient de l'énoncé officiel : à laisser.
+
+**Évaluation :** Bloc 1 rédigé à environ 90 %. Le risque est sur les Blocs 2 et 3, non démarrés.
+
+### Plan indicatif jusqu'au 20 octobre (~33 h d'étude)
+
+| Bloc | Charge | Contenu |
+| :--- | :--- | :--- |
+| 1 | ~3 h | Corrections ci-dessus, puis gel du document |
+| 2 | ~12 h | Plan de recette, tests écrits et exécutés, suivi des anomalies ; vérifier cours « Terminés » et QCM validé (sinon énoncé verrouillé) |
+| 3 | ~15 h | Squelette qui tourne : API de réservation avec verrou anti-surbooking, base de données, un écran frontend, tests |
+| — | ~3 h | Marge |
+
+---
+
 ## Décisions structurantes prises
 
 | Décision | Choix retenu | Motif |
@@ -115,26 +152,37 @@ et les 3 dépôts doivent être publics, sinon le correcteur tombe sur un 404.
 
 ## Prochaines actions
 
+À vérifier / finir côté GitHub (état exact non confirmé dans ce journal) :
+
 1. **Retirer le champ d'issue `Priority`** du Project 3, puis le passer en **public**.
 2. **Vérifier en navigation privée** : Project 3 et les 3 dépôts accessibles sans compte.
 3. **Renseigner les champs** sur les 12 US : Story Points (97 au total), Priorite MoSCoW, Version.
 4. **Nettoyer le project personnel n° 4 (GLOOMQUEST)** : retirer les 16 issues et les 4 champs ajoutés par erreur.
-5. **Traiter le Dossier 2** : solutions techniques, faisabilité, coûts.
-6. **Traiter le Dossier 3** : hébergement, schéma d'architecture, justification.
+
+Livrables, par priorité :
+
+5. **Bloc 2** : plan de recette, tests, anomalies (gabarit dans `Réponses Bloc 1 2 & 3/Bloc 2/`).
+6. **Bloc 3** : squelette backend/frontend fonctionnel (dépôts encore vides).
+7. **Bloc 1** : corriger D2 Q3 et le schéma D3 Q2, retirer les polices incorporées, puis geler.
+8. **Vidéos** (20 et 24 novembre) : trames de script, à planifier après le premier dépôt.
 
 ---
 
 ## Fichiers du projet
 
-| Fichier | Rôle |
+Racine : `STUDI/Grand Cinema App/grand-cinema-docs/`
+
+| Fichier / dossier | Rôle |
 | :--- | :--- |
 | `app_creation_from_scratch.md` | Ce journal de bord |
-| `tuto_github_epics.md` | Tutoriel backlog agile sur GitHub (multi-repo) |
-| `deadlines.md` · `planning_global.md` · `calendrier_blocs.md` | Rétroplanning |
-| `Enoncé_BDA_Bloc 1_…pdf` | Énoncé officiel du sujet imposé |
-| `Bloc 1/Bloc 1_…digitale.docx` | **Livrable officiel à déposer** |
-| `Bloc 1/exam_bloc_1_answer.md` | Brouillon de travail des réponses du Bloc 1 |
-| `Bloc 1/planning_bloc1_fasttrack.md` | Planning resserré du Bloc 1 |
+| `tuto_github_epics.md` | Tutoriel backlog agile sur GitHub (multi-repo, Bash) |
+| `deadlines.md` · `blocs.md` | Rétroplanning et cadrage des blocs |
+| `README.md` · `.gitignore` | Présentation du dépôt ; `node_modules` ignoré |
+| `Énoncés/` | Énoncés officiels Bloc 1 et Bloc 2 (PDF) |
+| `1 - Conception…/` · `2 - Gestion…/` · `3 - Développement…/` | Cours Studi (PDF), un sous-dossier par module |
+| `Réponses Bloc 1 2 & 3/Bloc 1/` | **Livrable Bloc 1 à déposer** (.docx) |
+| `Réponses Bloc 1 2 & 3/Bloc 2/` | Gabarit Bloc 2 à remplir (.docx ; .odt de 35 Mo : ne pas déposer) |
+| `TEST_CODES/typescript/` | Essais TypeScript |
 
 ---
 
