@@ -15,7 +15,7 @@ Une ligne par livrable : quoi, où, état. Les détails restent dans les fichier
 
 | Échéance | Attendu | État |
 | :--- | :--- | :--- |
-| Mardi 20 octobre 2026 | 1er dépôt Blocs 1, 2 et 3 (retours jurys) | En cours — Bloc 1 rédigé, Blocs 2 et 3 à produire |
+| Mardi 20 octobre 2026 | 1er dépôt Blocs 1, 2 et 3 (retours jurys) | En cours — Bloc 1 rédigé, Bloc 2 à produire, Bloc 3 démarré (backend) |
 | Vendredi 20 novembre 2026 | Dépôt final obligatoire + vidéos | À venir |
 | Mardi 24 novembre 2026 | Vidéos de réponse aux formateurs | À venir |
 
@@ -38,7 +38,14 @@ Une ligne par livrable : quoi, où, état. Les détails restent dans les fichier
 | **2** | 1 — Les outils | Q3 — Tickets DoR et DoD | ⬜ À faire (réponse vide) |
 | **2** | 2 — Tests et mise en production | Q1 à Q3 — Stratégie de tests, critères de mise en prod, plan B | ⬜ À faire (réponses vides) |
 | **2** | 3 — Gestion des risques | Q1 — Trois approches, choix justifié | ⬜ À faire (réponse vide) |
-| **3** | — | Développement, API, BDD, sécurité | ⬜ À faire |
+| **3** | 1 — Programmation | Q1 — Dépôt Git, branches, convention | 🟨 Dépôt backend public, `main` et `dev` protégées, `CONTRIBUTING.md` fusionné (PR #3) ; dépôt frontend à faire |
+| **3** | 1 — Programmation | Q2 — Base de données | 🟨 Modèle de 7 tables défini (noms en anglais) ; migration, script SQL et schéma à produire |
+| **3** | 2 — Mobilisation des outils | Q1 et Q4 — Bonnes pratiques | 🟨 Clean Architecture et CQRS en place ; rédaction à faire |
+| **3** | 2 — Mobilisation des outils | Q2 et Q5 — Framework et comparaison | ⬜ ASP.NET Core et Angular choisis ; comparaison à rédiger |
+| **3** | 2 — Mobilisation des outils | Q3 et Q6 — User stories, feature branch, Swagger | 🟨 US 1.1 en TDD préparée ; autres US, endpoint et Swagger à faire |
+| **3** | 3 — Gestion des erreurs | Q1 — Outil de qualité (Sonar) | ⬜ À faire |
+| **3** | 3 — Gestion des erreurs | Q2 — Tests unitaires et couverture | 🟨 Outillage choisi (xUnit, Moq, Shouldly, Coverlet) |
+| **3** | 3 — Gestion des erreurs | Q3 — Bug potentiel | 🟨 Bug identifié (double réservation concurrente) ; test et correctif à faire |
 
 ---
 
@@ -172,6 +179,34 @@ Vérifié sur GitHub le 9 octobre : 19 issues ouvertes (5 EPICs + 14 US), US 2.3
 
 Piège rencontré : variables Git Bash vides (`$REPO_DOCS`, `$PROJECT`) après réouverture du terminal ; `gh --repo ""` se rabat alors sur le dépôt du dossier courant sans prévenir. Parade : `source ~/gc-env.sh` en début de session, puis `echo "$REPO_DOCS"`.
 
+### Bloc 3 — Démarrage du backend (9-12 octobre)
+
+QCM validés, énoncé du Bloc 3 débloqué (`Énoncés/Bloc 3`). Périmètre retenu : US 1.1, 2.1, 2.2, 2.3, 5.2 et 5.3 (paiement et billet QR en bonus). Le backend passe en premier, le frontend ensuite.
+
+**Stack :** C# / .NET 10 (ASP.NET Core Minimal API), Clean Architecture, CQRS sans bibliothèque, EF Core et PostgreSQL 16 en Docker ; Angular pour le front.
+
+**Journal pas à pas :** `grand-cinema-backend/from_scratch.md`, un tutoriel réutilisable pour d'autres projets : commandes bash, et sous chaque étape un paragraphe en italique qui explique à quoi elle sert et pourquoi.
+
+Fait :
+- SDK figé par `global.json` (10.0.400) ; dépôt backend public ;
+- branches `main` et `dev` protégées par un ruleset (Pull Request obligatoire, 0 approbation en solo, suppression et force push interdits) ; `CONTRIBUTING.md` (convention de branches et de commits) fusionné par la PR #3 ;
+- solution Clean Architecture : Domain, Application, Infrastructure, Api et deux projets de tests ;
+- `.gitignore` .NET ajouté après coup : fichiers `bin/` et `obj/` retirés du suivi (en cours, PR à fusionner).
+
+Rédigé dans le journal, à exécuter :
+- étape 5 : contrats CQRS, puis l'US 1.1 (consulter la programmation) en TDD, avec 5 cycles rouge, vert, refactor tirés des critères d'acceptation du Bloc 2 ;
+- étapes 6 à 8 : PostgreSQL en Docker, modèle de 7 tables avec migration et script SQL, livraison de la phase ;
+- ADR 0001 (stratégie de lecture CQRS), à rédiger avant l'US 5.3 ;
+- une section de référence sur le parcours d'une requête dans le code.
+
+Préparation de l'oral : partie Bloc 3 ajoutée à `Réponses Bloc 1 2 & 3/notes_pour_l_oral.md` (questions probables du jury et réponses).
+
+Pièges rencontrés :
+- un fichier ouvert dans VS Code écrase les modifications faites de l'extérieur : le fermer avant ;
+- `Select-String` n'existe pas sous Git Bash : commandes bash uniquement (`grep`, `git ls-files`) ;
+- `git reset --hard` détruit le travail non commité : utiliser `git reset --soft HEAD~1` pour annuler un commit ;
+- l'énoncé demande une branche `develop` : le dépôt garde `dev`, la correspondance est à écrire dans `CONTRIBUTING.md` et dans la copie.
+
 ---
 
 ## Décisions structurantes prises
@@ -192,6 +227,14 @@ Piège rencontré : variables Git Bash vides (`$REPO_DOCS`, `$PROJECT`) après r
 | Mise en conformité du backlog GitHub | Modifier, fermer ou créer les issues ; garder le Project n° 3 | Lien cité dans les copies, tâches conservées, affinage visible dans l'historique |
 | Blocage des places | En base PostgreSQL, dans une transaction, expiration à 10 minutes | Cohérent avec le schéma d'architecture (pas de Redis) |
 | Titre de l'US 2.3 | « Réserver un nombre de places et passer au paiement » | Éviter la confusion avec le choix du siège (US 2.4, V2) |
+| Stack du Bloc 3 | ASP.NET Core Minimal API, Clean Architecture, CQRS sans bibliothèque ; Angular ; PostgreSQL en Docker avec EF Core | Métier testable sans base ; MediatR passé sous licence commerciale ; même base que RDS au Bloc 1 |
+| Ordre de développement | Backend d'abord, US 1.1 en premier | Plus petite tranche complète, valide l'architecture avant l'US 2.3 |
+| Méthode de développement | TDD (xUnit, Moq, Shouldly, Coverlet), un test par critère d'acceptation | Annoncé dans la stratégie de tests du Bloc 2 |
+| Branche d'intégration | `dev`, équivalente à `develop` demandée par l'énoncé | Choix assumé ; correspondance à documenter |
+| Mode de fusion des PR | Merge commit | Garde le workflow par branche visible dans le graphe |
+| Nommage du code | Tout en anglais, tableau de correspondance avec le vocabulaire du Bloc 1 | Langue de l'écosystème .NET, pas de noms hybrides |
+| Organisation du code | `Features/<Feature>/Commands`, `Queries`, `DTOs` ; `Abstractions/Cqrs` et `Abstractions/Persistence` | Un cas d'usage au même endroit ; dépendances vers le métier |
+| Stratégie de lecture CQRS | Repository pour les lectures simples, projection SQL pour les agrégats (US 5.3) ; règle écrite dans l'ADR 0001 | Tests unitaires de la logique ; pas de chargement d'entités inutile |
 
 ---
 
@@ -209,7 +252,7 @@ Livrables, par priorité :
 
 1. **Copie Bloc 2** : renommer l'US 2.3 (titre et description) pour qu'elle corresponde au Project. Corriger sur GitHub l'affichage du gras « En tant qu' » / « afin d' » dans 8 US (commandes `sed` + `gh issue edit`).
 2. **Bloc 2** : Dossier 1 Q1 et Q2 sont rédigées. Reste : DoR/DoD (D1 Q3), stratégie de tests, critères de mise en production et plan B (D2), gestion des risques (D3).
-3. **Bloc 3** : squelette backend/frontend fonctionnel (dépôts encore vides).
+3. **Bloc 3** : fusionner la PR du `.gitignore`, puis dérouler les étapes 5 à 8 de `grand-cinema-backend/from_scratch.md` (US 1.1 en TDD, base de données) ; démarrer le dépôt frontend ; écrire la correspondance `dev` / `develop` dans `CONTRIBUTING.md` et la copie.
 4. **Bloc 1** : insérer le nouveau schéma, nettoyer les paragraphes vides, retirer les polices incorporées, puis geler le document.
 5. **Vidéos** (20 et 24 novembre) : trames de script, à planifier après le premier dépôt.
 
@@ -225,9 +268,10 @@ Racine : `STUDI/Grand Cinema App/grand-cinema-docs/`
 | `tuto_github_epics.md` | Tutoriel backlog agile sur GitHub (multi-repo, Bash) |
 | `deadlines.md` · `blocs.md` | Rétroplanning et cadrage des blocs |
 | `README.md` · `.gitignore` | Présentation du dépôt ; `node_modules` ignoré |
-| `Énoncés/` | Énoncés officiels Bloc 1 et Bloc 2 (PDF) |
+| `Énoncés/` | Énoncés officiels des Blocs 1, 2 et 3 (PDF) |
 | `1 - Conception…/` · `2 - Gestion…/` · `3 - Développement…/` | Cours Studi (PDF), un sous-dossier par module |
 | `Réponses Bloc 1 2 & 3/Bloc 1/` | **Livrable Bloc 1 à déposer** (.docx) |
+| `Réponses Bloc 1 2 & 3/notes_pour_l_oral.md` | Questions probables du jury et réponses, Blocs 1, 2 et 3 (non déposé) |
 | `Réponses Bloc 1 2 & 3/Bloc 2/` | **Livrable Bloc 2** (.docx, en cours ; la copie .odt de 35 Mo ne sert pas au dépôt) |
 | `TEST_CODES/typescript/` | Essais TypeScript |
 
