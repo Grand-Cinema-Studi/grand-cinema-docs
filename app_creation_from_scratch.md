@@ -38,13 +38,13 @@ Une ligne par livrable : quoi, où, état. Les détails restent dans les fichier
 | **2** | 1 — Les outils | Q3 — Tickets DoR et DoD | ⬜ À faire (réponse vide) |
 | **2** | 2 — Tests et mise en production | Q1 à Q3 — Stratégie de tests, critères de mise en prod, plan B | ⬜ À faire (réponses vides) |
 | **2** | 3 — Gestion des risques | Q1 — Trois approches, choix justifié | ⬜ À faire (réponse vide) |
-| **3** | 1 — Programmation | Q1 — Dépôt Git, branches, convention | 🟨 Dépôt backend public, `main` et `dev` protégées, `CONTRIBUTING.md` fusionné (PR #3) ; dépôt frontend à faire |
-| **3** | 1 — Programmation | Q2 — Base de données | 🟨 Modèle de 7 tables défini (noms en anglais) ; migration, script SQL et schéma à produire |
+| **3** | 1 — Programmation | Q1 — Dépôt Git, branches, convention | 🟨 Dépôt backend public, `main` et `dev` protégées, `CONTRIBUTING.md` fusionné (PR #3), travail par feature branch et PR (12 PR fusionnées) ; dépôt frontend à faire |
+| **3** | 1 — Programmation | Q2 — Base de données | 🟨 PostgreSQL 16 en Docker et EF Core en place (PR #12) ; modèle de 7 tables défini ; migration, script SQL et schéma à produire |
 | **3** | 2 — Mobilisation des outils | Q1 et Q4 — Bonnes pratiques | 🟨 Clean Architecture et CQRS en place ; rédaction à faire |
 | **3** | 2 — Mobilisation des outils | Q2 et Q5 — Framework et comparaison | ⬜ ASP.NET Core et Angular choisis ; comparaison à rédiger |
-| **3** | 2 — Mobilisation des outils | Q3 et Q6 — User stories, feature branch, Swagger | 🟨 US 1.1 en TDD préparée ; autres US, endpoint et Swagger à faire |
+| **3** | 2 — Mobilisation des outils | Q3 et Q6 — User stories, feature branch, Swagger | 🟨 US 1.1 développée en TDD côté Application (PR #10) ; endpoint, Swagger et autres US à faire |
 | **3** | 3 — Gestion des erreurs | Q1 — Outil de qualité (Sonar) | ⬜ À faire |
-| **3** | 3 — Gestion des erreurs | Q2 — Tests unitaires et couverture | 🟨 Outillage choisi (xUnit, Moq, Shouldly, Coverlet) |
+| **3** | 3 — Gestion des erreurs | Q2 — Tests unitaires et couverture | 🟨 xUnit, Moq, Shouldly, Coverlet ; 5 tests unitaires verts (US 1.1) ; rapport de couverture à produire |
 | **3** | 3 — Gestion des erreurs | Q3 — Bug potentiel | 🟨 Bug identifié (double réservation concurrente) ; test et correctif à faire |
 
 ---
@@ -113,7 +113,7 @@ et les 3 dépôts doivent être publics, sinon le correcteur tombe sur un 404.
 
 Le dossier local est réorganisé sous `STUDI/Grand Cinema App/grand-cinema-docs/` :
 `1 - Conception…`, `2 - Gestion…`, `3 - Développement…` (cours Studi récupérés tels quels, environ 250 PDF),
-`Énoncés/` (2 PDF officiels), `Réponses Bloc 1 2 & 3/` (un sous-dossier par bloc) et `TEST_CODES/`.
+`Énoncés/` (2 PDF officiels), `Réponses Bloc 1 2 & 3/` (un sous-dossier par bloc).
 Les anciens brouillons (`exam_bloc_1_answer.md`, `planning_bloc1_fasttrack.md`, dossier `backlog/`) ont été supprimés volontairement.
 
 Piège rencontré : `git pull` échouait sur Windows (`error: invalid path`) car des dossiers de cours contenaient
@@ -191,7 +191,7 @@ Fait :
 - SDK figé par `global.json` (10.0.400) ; dépôt backend public ;
 - branches `main` et `dev` protégées par un ruleset (Pull Request obligatoire, 0 approbation en solo, suppression et force push interdits) ; `CONTRIBUTING.md` (convention de branches et de commits) fusionné par la PR #3 ;
 - solution Clean Architecture : Domain, Application, Infrastructure, Api et deux projets de tests ;
-- `.gitignore` .NET ajouté après coup : fichiers `bin/` et `obj/` retirés du suivi (en cours, PR à fusionner).
+- `.gitignore` .NET ajouté après coup : fichiers `bin/` et `obj/` retirés du suivi (fusionné).
 
 Rédigé dans le journal, à exécuter :
 - étape 5 : contrats CQRS, puis l'US 1.1 (consulter la programmation) en TDD, avec 5 cycles rouge, vert, refactor tirés des critères d'acceptation du Bloc 2 ;
@@ -205,7 +205,17 @@ Pièges rencontrés :
 - un fichier ouvert dans VS Code écrase les modifications faites de l'extérieur : le fermer avant ;
 - `Select-String` n'existe pas sous Git Bash : commandes bash uniquement (`grep`, `git ls-files`) ;
 - `git reset --hard` détruit le travail non commité : utiliser `git reset --soft HEAD~1` pour annuler un commit ;
-- l'énoncé demande une branche `develop` : le dépôt garde `dev`, la correspondance est à écrire dans `CONTRIBUTING.md` et dans la copie.
+
+### Bloc 3 — US 1.1 et base de données locale (12-13 octobre)
+
+Étapes 5 et 6 de `grand-cinema-backend/from_scratch.md` réalisées, toutes fusionnées dans `dev` par PR :
+
+- **Contrats CQRS** (PR #8 et #9) : interfaces de commandes et de requêtes, sans bibliothèque ;
+- **US 1.1 — consulter la programmation** (PR #10) : première tranche métier en TDD (entités `Movie`, `Room`, `Screening`, requête `GetSchedule` et ses DTOs) ; 5 tests unitaires, tous verts ;
+- **Base de données locale** (PR #12) : EF Core, PostgreSQL 16 en Docker Compose, outil `dotnet-ef` local ; secrets hors du dépôt (`.env` pour Docker, user-secrets pour .NET) ;
+- journal `from_scratch.md` complété au fil des étapes (PR #11).
+
+**État :** fondations et US 1.1 terminées côté Application. Reste : étape 7 (modèle de 7 tables, migration, script SQL, schéma), étape 8 (livraison de la phase vers `main`), puis l'endpoint et Swagger.
 
 ---
 
@@ -230,7 +240,7 @@ Pièges rencontrés :
 | Stack du Bloc 3 | ASP.NET Core Minimal API, Clean Architecture, CQRS sans bibliothèque ; Angular ; PostgreSQL en Docker avec EF Core | Métier testable sans base ; MediatR passé sous licence commerciale ; même base que RDS au Bloc 1 |
 | Ordre de développement | Backend d'abord, US 1.1 en premier | Plus petite tranche complète, valide l'architecture avant l'US 2.3 |
 | Méthode de développement | TDD (xUnit, Moq, Shouldly, Coverlet), un test par critère d'acceptation | Annoncé dans la stratégie de tests du Bloc 2 |
-| Branche d'intégration | `dev`, équivalente à `develop` demandée par l'énoncé | Choix assumé ; correspondance à documenter |
+| Branche d'intégration | `dev` | Choix assumé |
 | Mode de fusion des PR | Merge commit | Garde le workflow par branche visible dans le graphe |
 | Nommage du code | Tout en anglais, tableau de correspondance avec le vocabulaire du Bloc 1 | Langue de l'écosystème .NET, pas de noms hybrides |
 | Organisation du code | `Features/<Feature>/Commands`, `Queries`, `DTOs` ; `Abstractions/Cqrs` et `Abstractions/Persistence` | Un cas d'usage au même endroit ; dépendances vers le métier |
@@ -252,7 +262,7 @@ Livrables, par priorité :
 
 1. **Copie Bloc 2** : renommer l'US 2.3 (titre et description) pour qu'elle corresponde au Project. Corriger sur GitHub l'affichage du gras « En tant qu' » / « afin d' » dans 8 US (commandes `sed` + `gh issue edit`).
 2. **Bloc 2** : Dossier 1 Q1 et Q2 sont rédigées. Reste : DoR/DoD (D1 Q3), stratégie de tests, critères de mise en production et plan B (D2), gestion des risques (D3).
-3. **Bloc 3** : fusionner la PR du `.gitignore`, puis dérouler les étapes 5 à 8 de `grand-cinema-backend/from_scratch.md` (US 1.1 en TDD, base de données) ; démarrer le dépôt frontend ; écrire la correspondance `dev` / `develop` dans `CONTRIBUTING.md` et la copie.
+3. **Bloc 3** : dérouler les étapes 7 et 8 de `grand-cinema-backend/from_scratch.md` (modèle de données, migration, livraison sur `main`), puis exposer l'US 1.1 (endpoint, Swagger) ; démarrer le dépôt frontend.
 4. **Bloc 1** : insérer le nouveau schéma, nettoyer les paragraphes vides, retirer les polices incorporées, puis geler le document.
 5. **Vidéos** (20 et 24 novembre) : trames de script, à planifier après le premier dépôt.
 
@@ -273,7 +283,6 @@ Racine : `STUDI/Grand Cinema App/grand-cinema-docs/`
 | `Réponses Bloc 1 2 & 3/Bloc 1/` | **Livrable Bloc 1 à déposer** (.docx) |
 | `Réponses Bloc 1 2 & 3/notes_pour_l_oral.md` | Questions probables du jury et réponses, Blocs 1, 2 et 3 (non déposé) |
 | `Réponses Bloc 1 2 & 3/Bloc 2/` | **Livrable Bloc 2** (.docx, en cours ; la copie .odt de 35 Mo ne sert pas au dépôt) |
-| `TEST_CODES/typescript/` | Essais TypeScript |
 
 ---
 

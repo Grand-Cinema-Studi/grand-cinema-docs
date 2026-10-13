@@ -145,6 +145,39 @@ Rappel du critère commun à toutes les questions du Bloc 3 : « interactions av
 - Réponse : le backlog du Bloc 2 sépare le MVP de la V2 (US 2.4, 5.4 et 5.5 en « Won't have » pour cette version). Dans le temps de l'épreuve, j'ai priorisé le cœur du parcours (consulter, se connecter, voir les places restantes, réserver sans double vente, programmer, suivre) et la story la plus risquée techniquement (US 2.3). Les autres stories du MVP sont planifiées dans les sprints suivants, avec la même méthode (branche, TDD, Pull Request).
 - À vérifier avant l'oral : la liste exacte des stories du MVP non développées, pour la citer sans hésiter.
 
+**État du dépôt backend au 13 octobre**
+- Fusionnées dans `dev` : PR #9 (contrats CQRS), PR #10 (US 1.1 : handler de la programmation et ses 5 tests), PR #11 (journal), PR #12 (EF Core, PostgreSQL en Docker, outil `dotnet-ef`).
+- Pas encore fait : repository réel, endpoint, Swagger (`Program.cs` est encore le modèle « Hello World »), modèle de données complet et migration.
+
+**L'US 1.1 n'est pas encore une fonctionnalité complète (Dossier 2, Question 6)**
+- L'énoncé demande une fonctionnalité complète : branche, développement, merge request et documentation Swagger. Aujourd'hui, l'US 1.1 n'a que sa logique métier : il manque le repository PostgreSQL, l'endpoint et Swagger.
+- À faire avant le 20 octobre : terminer l'US 1.1 de bout en bout (c'est la plus simple à présenter comme fonctionnalité complète).
+- Si la question vient : « L'US est livrée en deux Pull Requests : la logique métier testée d'abord (PR #10), puis l'infrastructure, l'endpoint et Swagger une fois la base en place. »
+
+**Le tri des films par titre n'a pas de test**
+- Le handler trie les films par titre (`OrderBy(m => m.Title)`), mais ni test ni critère d'acceptation ne l'exige : du code de production sans test, contraire à la règle TDD annoncée.
+- Décision : garder le tri (sans lui, l'ordre des films dépend de PostgreSQL et peut changer d'un appel à l'autre), mais le rendre officiel. Détail dans `from_scratch.md`, étape 5e bis :
+  - ajouter le critère à l'issue de l'US 1.1 (« Les films sont affichés par ordre alphabétique de titre ») ;
+  - écrire le test `When_several_movies_exist_Then_they_are_sorted_by_title` ;
+  - vérifier qu'il échoue en retirant temporairement le tri, puis le rétablir ; le noter dans le message de commit.
+- Question probable : « Quel test exige que les films soient triés par titre ? »
+- Réponse : « J'ai repéré du code de production sans test. J'ai fait valider la règle, je l'ai ajoutée aux critères d'acceptation de l'US 1.1, puis j'ai écrit le test, en vérifiant qu'il échouait bien sans le tri. »
+- Question probable : « Pourquoi par titre et pas par heure de séance ? »
+- Réponse : c'est une décision du Product Owner : l'ordre alphabétique est simple et prévisible pour le spectateur ; l'ordre de la première séance serait une alternative utile au guichet. Le critère écrit fixe le choix, et le test le protège.
+- Piège à connaître : `OrderBy` sur du texte dépend de la langue du serveur (« Élise » peut passer après « Zorro » sur un serveur en anglais). Correctif possible : comparer explicitement en français. Même famille de problème que le fuseau horaire.
+
+**`.env.example` absent du dépôt**
+- Le journal prévoit un `.env.example` versionné (noms des variables sans valeur), mais il n'est pas dans le dépôt. Sans lui, quelqu'un qui clone le projet ne sait pas quelles variables créer (`POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`).
+- À faire : l'ajouter, ou ne pas l'annoncer à l'oral.
+
+**Le code et le modèle de données ne disent pas encore la même chose**
+- L'entité `Movie` a une date de sortie (`ReleaseDate`) absente du modèle prévu, et rend le synopsis et l'affiche obligatoires.
+- À faire : aligner le modèle de données (étape 7), le MCD de la copie et le tableau de correspondance. Le jury compare le schéma et le code.
+
+**Petites coquilles visibles**
+- La branche de la PR #10 s'appelle `feature/us-1-1-view-shedule` (« shedule » sans c). Réponse si besoin : « Coquille dans le nom ; la branche est fusionnée et supprimée, je ne réécris pas l'historique pour ça. »
+- Le fichier de mapping s'appelle `ScreenMappings.cs` alors que l'entité est `Screening` : renommer en `ScreeningMappings.cs` pour rester cohérent.
+
 ### Dossier 1, Question 1 — Dépôt Git, branches et convention
 
 **Pull Request et merge request**
@@ -238,8 +271,15 @@ Rappel du critère commun à toutes les questions du Bloc 3 : « interactions av
 - Question probable : « Pourquoi ne pas renvoyer directement les entités au front ? »
 - Réponse : le DTO ne contient que ce que l'écran affiche, n'expose pas le modèle interne et évite les références circulaires à la sérialisation JSON.
 
+**Mapping manuel des entités vers les DTO**
+- Question probable : « Pourquoi ne pas utiliser AutoMapper ? »
+- Réponse : la conversion est écrite à la main, dans des méthodes d'extension rangées dans `DTOs/Mappings`. Elle est explicite, vérifiée à la compilation (une propriété oubliée ou renommée se voit tout de suite), sans réflexion et facile à déboguer. AutoMapper serait une dépendance de plus pour quelques lignes de code ; il est aussi passé sous licence commerciale (même éditeur que MediatR).
+- À vérifier avant l'oral : les conditions de licence actuelles d'AutoMapper.
+
 **Sécurité**
-- Aucun secret dans le dépôt public : mot de passe de la base dans un `.env` non versionné (un `.env.example` sans valeur est versionné), chaîne de connexion dans les secrets utilisateur .NET.
+- Aucun secret dans le dépôt public : nom, utilisateur et mot de passe de la base dans un `.env` non versionné, lu par Docker Compose ; chaîne de connexion dans les user-secrets .NET (le projet Api porte un `UserSecretsId`). Le `.env.example` est encore à ajouter.
+- Question probable : « Pourquoi le mot de passe est-il à deux endroits, `.env` et user-secrets ? »
+- Réponse : chaque outil a son rôle. Docker Compose lit le `.env` pour configurer le conteneur PostgreSQL ; ASP.NET Core ne lit pas ce fichier nativement. Les user-secrets sont intégrés à .NET, stockés hors du dépôt (dans le dossier personnel), donc impossibles à commiter par erreur, et lus aussi par `dotnet ef` pour les migrations. En production, ni l'un ni l'autre : variables d'environnement ou gestionnaire de secrets AWS. Inconvénient accepté : le mot de passe est saisi deux fois, sur chaque machine.
 - Mots de passe stockés hachés (colonne PasswordHash), jamais en clair.
 - À compléter avec l'US 2.1 : authentification, rôles et protection des endpoints.
 
@@ -247,7 +287,15 @@ Rappel du critère commun à toutes les questions du Bloc 3 : « interactions av
 - À compléter quand elle sera en place (format de réponse d'erreur de l'API, codes HTTP, journalisation). Prévoir au minimum le cas de la place déjà prise : réponse claire au lieu d'une erreur technique.
 
 **Versioning**
-- Branches protégées, une branche par story, Pull Requests, Conventional Commits, SDK figé par `global.json`, migrations de base versionnées.
+- Branches protégées, une branche par story, Pull Requests, Conventional Commits, SDK figé par `global.json`, outil `dotnet-ef` figé par `dotnet-tools.json`, migrations de base versionnées.
+
+**PostgreSQL dans Docker**
+- Question probable : « Pourquoi Docker pour la base ? »
+- Réponse : même moteur que la production prévue au Bloc 1 (RDS PostgreSQL), version figée (`postgres:16`), rien à installer sur les deux ordinateurs, un volume qui conserve les données et une vérification de santé (`pg_isready`) qui indique quand la base est prête.
+
+**`dotnet-ef` en outil local**
+- Question probable : « Pourquoi un fichier `dotnet-tools.json` ? »
+- Réponse : `dotnet-ef` gère les migrations. Installé localement au dépôt, sa version exacte est écrite dans ce manifeste commité : toute machine (l'autre ordinateur, la future intégration continue) récupère la même version avec `dotnet tool restore`. Elle doit correspondre à la version d'EF Core du projet (10.0.12), ce qu'une installation globale ne garantit pas.
 
 **Licences des bibliothèques**
 - Question probable : « Pourquoi pas MediatR ? »
@@ -256,7 +304,8 @@ Rappel du critère commun à toutes les questions du Bloc 3 : « interactions av
 
 **« Aujourd'hui » et le fuseau horaire**
 - Question probable : « Si un spectateur consulte la programmation à 23 h 30 et que le serveur est en UTC, quel jour voit-il ? »
-- Réponse : risque réel de décalage d'un jour. La date du jour vient d'un `TimeProvider` (remplacé par une horloge simulée dans les tests) ; en production, le fuseau du cinéma (Europe/Paris) doit être configuré explicitement. Point identifié, à traiter au déploiement.
+- Réponse : risque réel de décalage d'un jour. La date du jour vient d'un `TimeProvider`, remplacé dans les tests par une horloge simulée réglée sur le fuseau Europe/Paris (test du cycle 4). En production, `TimeProvider.System` prend le fuseau du serveur, souvent UTC sur AWS : il faudra convertir l'heure courante en heure de Paris explicitement. Point identifié, à traiter au déploiement.
+- Limite du test actuel : il simule midi à Paris, donc le même jour qu'en UTC. Le cas qui piège (par exemple 22 h 30 UTC en été, soit 0 h 30 le lendemain à Paris) n'est pas testé : un test à ajouter quand le fuseau sera géré.
 
 **ADR 0001 – stratégie de lecture**
 - Les choix d'architecture sont consignés dans `docs/adr` (contexte, décision, alternatives écartées, conséquences). Le citer quand une question porte sur « pourquoi ce choix ».
@@ -273,14 +322,19 @@ Rappel du critère commun à toutes les questions du Bloc 3 : « interactions av
 
 **TDD**
 - Question probable : « Comment prouvez-vous que vous avez fait du TDD ? »
-- Réponse : par l'historique Git de la branche : pour chaque cycle, un commit `test(...): red`, un commit `feat(...): green` et un commit `refactor(...)`. Chaque critère d'acceptation du Bloc 2 correspond à un test nommé `When_<situation>_Then_<résultat>`, étiqueté avec le numéro de la story.
-- Attention : n'affirmer que ce que l'historique montre réellement.
+- Réponse : par l'historique Git de la PR #10. Chaque critère d'acceptation du Bloc 2 correspond à un test nommé `When_<situation>_Then_<résultat>`, étiqueté avec le numéro de la story (5 tests). L'historique montre :
+  - cycle 1 (regroupement par film) : un commit `red`, un commit `green`, un commit `refactor` ;
+  - cycle 4 (date du jour par défaut) : un commit `red`, puis un commit `green` ;
+  - cycles 2, 3 et 5 (date choisie, aucune séance, tri par heure) : un seul commit `test(...)` chacun, car le test est passé au vert dès son écriture.
+- Question probable : « Les tests des cycles 2, 3 et 5 n'ont jamais été rouges. Est-ce encore du TDD ? »
+- Réponse : « Pas au sens strict, et je l'assume. Le code minimal du cycle 1 transmettait déjà la date au repository et renvoyait une liste vide sans séance : les tests 2 et 3 confirment ces comportements, je les garde comme spécification des critères d'acceptation. Pour le tri par heure, le comportement existait avant son test : il a été écrit trop tôt, alors qu'un refactor ne doit pas ajouter de comportement. Ce que j'en retiens : quand un nouveau test passe immédiatement, je casse volontairement le code pour vérifier que le test échoue bien, puis je le rétablis. »
+- À vérifier avant l'oral : dans quel commit le tri par heure est apparu (probablement le refactor du cycle 1), pour répondre précisément.
 - Question probable : « Vos tests n'utilisent pas de base : comment savez-vous que le filtre par jour fonctionne ? »
 - Réponse : les tests unitaires vérifient la logique du handler, avec un mock du repository. Le filtre SQL est vérifié par un test d'intégration sur une vraie base PostgreSQL.
 
 **Parcours d'une requête**
 - Question probable : « Décrivez le parcours d'une requête dans votre application. »
-- Réponse en cinq temps : l'endpoint (Api) transforme la requête HTTP en `GetScheduleQuery` ; l'injection de dépendances fournit le handler ; le handler (Application) appelle `IScreeningReadRepository` ; le repository (Infrastructure) interroge PostgreSQL via EF Core et renvoie des entités ; le handler construit un `ScheduleDto`, que l'endpoint renvoie en JSON (HTTP 200). Schéma complet dans `from_scratch.md`.
+- Réponse en cinq temps : l'endpoint (Api) transforme la requête HTTP en `GetScheduleQuery` ; l'injection de dépendances fournit le handler ; le handler (Application) appelle `IScreeningReadRepository.GetScreeningsAsync` ; le repository (Infrastructure) interroge PostgreSQL via EF Core et renvoie des entités ; le handler construit un `ScheduleDto`, que l'endpoint renvoie en JSON (HTTP 200). Schéma complet dans `from_scratch.md`.
 
 **Est-ce vraiment du CQRS ?**
 - Question probable : « Votre lecture passe par un repository qui charge des entités. Est-ce vraiment du CQRS ? »
@@ -293,7 +347,7 @@ Rappel du critère commun à toutes les questions du Bloc 3 : « interactions av
 - Réponse : le suivi (US 5.3) calcule des agrégats : il vaut mieux les faire calculer par PostgreSQL que charger des centaines d'entités pour n'en garder que des totaux. Le mélange suit une règle écrite dans l'ADR 0001 : écriture par entités et repository ; lecture simple par repository ; lecture d'agrégats par projection. Le nom indique l'approche (`ReadRepository` ou `Queries`). Ce qui doit être uniforme, c'est la règle, pas la technique.
 
 **Swagger**
-- À compléter : documentation de l'API générée et accessible ; montrer l'endpoint de l'US développée en entier pour la Question 6.
+- À faire : au 13 octobre, `Program.cs` est encore le modèle « Hello World », sans endpoint ni Swagger. Prévoir la documentation de l'API générée et accessible, et montrer l'endpoint de l'US développée en entier pour la Question 6.
 
 ### Dossier 3 — Qualité, tests et bug
 
@@ -304,6 +358,8 @@ Rappel du critère commun à toutes les questions du Bloc 3 : « interactions av
 - Question probable : « Quel taux de couverture visez-vous ? »
 - Réponse : pas un chiffre pour le principe. Ce qui compte, c'est que la logique métier (handlers et domaine) soit couverte ; un taux élevé obtenu sur du code sans logique ne prouve rien. Couverture mesurée avec Coverlet, capture du rapport dans la copie.
 - Outils à savoir justifier : xUnit, Moq (doublures), Shouldly (assertions lisibles), horloge simulée (`FakeTimeProvider`) pour maîtriser la date.
+- À montrer : `GetScheduleHandler` couvert à 100 %, dans un rapport HTML généré avec ReportGenerator à partir du fichier de Coverlet (ou directement dans VS Code avec C# Dev Kit).
+- Limite à savoir dire : un pourcentage élevé prouve que le code a été exécuté, pas que les assertions vérifient les bons résultats.
 
 **Question 3 — Bug potentiel : la double réservation**
 - Question probable : « Comment l'avez-vous identifié, reproduit, corrigé et validé ? »
