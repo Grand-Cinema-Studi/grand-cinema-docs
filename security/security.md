@@ -17,13 +17,15 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 
 ## Authentification et rôles
 
-### Comptes _(à venir, US 2.1)_
+### Comptes (US 2.1)
 
-- Un compte par adresse e-mail (contrainte d'unicité en base), adresse enregistrée en minuscules.
-- **Mot de passe jamais stocké en clair** : seule son empreinte est enregistrée (colonne `PasswordHash`), calculée par un algorithme lent et salé conçu pour les mots de passe (PBKDF2 avec le `PasswordHasher` d'ASP.NET Core, ou Argon2). Le choix sera consigné dans un ADR.
+Décision détaillée dans l'[ADR 0002](../adr/0002-authentication-jwt.md).
+
+- Un compte par adresse e-mail (contrainte d'unicité en base), adresse enregistrée en minuscules et sans espaces. Deux inscriptions simultanées avec la même adresse : la base n'en accepte qu'une, l'autre reçoit `409`.
+- **Mot de passe jamais stocké en clair** : seule son empreinte est enregistrée (colonne `PasswordHash`), calculée par le `PasswordHasher` d'ASP.NET Core (PBKDF2, HMAC-SHA512, 100 000 itérations, sel aléatoire par mot de passe). 12 caractères au moins (recommandation de la CNIL).
 - En cas d'échec de connexion, le message ne dit pas si c'est l'adresse ou le mot de passe qui est faux (critère de l'US 2.1) : on ne révèle pas quelles adresses ont un compte.
-- Tentatives de connexion limitées (limitation de débit d'ASP.NET Core) contre les attaques par force brute.
-- Mécanisme de session (jeton JWT ou cookie `HttpOnly`) : décidé avec l'US 2.1 et consigné dans le même ADR.
+- Tentatives limitées : 10 inscriptions ou connexions par minute et par adresse IP, réponse `429` au-delà.
+- Session : jeton JWT signé (HMAC-SHA256), valable 60 minutes, envoyé dans l'en-tête `Authorization: Bearer`. Il contient l'identifiant (`sub`), l'adresse et le rôle de l'utilisateur. La clé de signature est un secret (user-secrets en développement, Parameter Store en production).
 
 ### Rôles et droits
 
@@ -38,7 +40,7 @@ Les quatre rôles du Bloc 1 (`UserRole` dans le code) :
 | Gérer la programmation | | | | | ✅ |
 | Suivre les réservations | | | | | ✅ |
 
-- Chaque endpoint déclare qui peut l'appeler (politiques d'autorisation d'ASP.NET Core) _(à venir)_ ; un endpoint sans déclaration n'est accessible qu'aux utilisateurs connectés, jamais par oubli au public.
+- Chaque endpoint déclare qui peut l'appeler (politiques d'autorisation d'ASP.NET Core) ; un endpoint sans déclaration n'est accessible qu'aux utilisateurs connectés (politique de repli), jamais par oubli au public.
 - Les droits sont vérifiés par l'API, jamais seulement par le front : masquer un bouton n'est pas une protection.
 - Un spectateur n'accède qu'à ses propres réservations : l'identifiant de l'utilisateur vient de sa session, pas de l'URL ni du corps de la requête.
 - Un compte créé par l'inscription publique a toujours le rôle `Customer` : les rôles du personnel ne s'obtiennent pas en s'inscrivant.
@@ -73,14 +75,14 @@ Détail par environnement : [environnements](../deployment/environments.md#secre
 
 | Catégorie de risque | Mesure dans le projet | État |
 |---|---|---|
-| Contrôle d'accès défaillant | politiques par rôle vérifiées par l'API, accès limité à ses propres réservations, GUID | _(à venir, US 2.1)_ |
-| Défaillances cryptographiques | mots de passe hachés et salés, HTTPS | _(à venir, US 2.1)_ |
+| Contrôle d'accès défaillant | politiques par rôle vérifiées par l'API, accès refusé par défaut, accès limité à ses propres réservations, GUID | accès par défaut et GUID ✅ ; rôles et réservations _(à venir, US 2.3 et 5.2)_ |
+| Défaillances cryptographiques | mots de passe hachés et salés, HTTPS | hachage ✅ ; HTTPS _(à venir, mise en ligne)_ |
 | Injection (SQL) | requêtes EF Core paramétrées, aucun SQL construit par concaténation | ✅ |
 | Injection (XSS) | échappement automatique des affichages par Angular | _(à venir, front)_ |
 | Conception non sécurisée | double vente empêchée par la base et par une transaction ([bug 0001](../quality/bugs/0001-double-booking.md)) | contrainte ✅, transaction _(à venir, US 2.3)_ |
 | Mauvaise configuration | Swagger désactivé par défaut, aucune trace technique dans les réponses d'erreur, un seul port ouvert | ✅ Swagger ; le reste _(à venir)_ |
 | Composants vulnérables | versions figées, alertes Dependabot, analyse SonarCloud | versions ✅ ; outils _(à venir)_ |
-| Authentification défaillante | limitation des tentatives, message d'échec neutre | _(à venir, US 2.1)_ |
+| Authentification défaillante | limitation des tentatives, message d'échec neutre | ✅ |
 | Journalisation insuffisante | journaux de l'API (connexions refusées, erreurs), sans mot de passe ni donnée personnelle superflue | _(à venir)_ |
 
 ## Vérification

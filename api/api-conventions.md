@@ -15,6 +15,9 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 | Méthode | Route | Accès | Rôle | User story |
 |---|---|---|---|---|
 | `GET` | `/api/schedule?date=AAAA-MM-JJ` | public | films et séances d'un jour (aujourd'hui si la date est omise) ; films triés par titre, séances par heure | 1.1 |
+| `POST` | `/api/users` | public, limité à 10 appels par minute et par IP | création d'un compte spectateur ; `201` avec un jeton d'accès, `409` si l'adresse est déjà utilisée | 2.1 |
+| `POST` | `/api/tokens` | public, limité à 10 appels par minute et par IP | connexion ; `200` avec un jeton d'accès, `401` sans dire quelle donnée est fausse | 2.1 |
+| `GET` | `/api/users/me` | connecté | profil de l'utilisateur identifié par le jeton | 2.1 |
 | `GET` | `/health` | public | état de l'application, pour la supervision et le script de déploiement | — |
 | `GET` | `/` | public | nom de l'API, pour un humain qui ouvre son adresse | — |
 
@@ -79,7 +82,7 @@ Exemple, `GET /api/schedule?date=2026-07-18` :
 
 Une liste vide n'est pas une erreur : une journée sans séance renvoie `200` avec `"movies": []`, et c'est le front qui affiche le message « aucune séance ».
 
-## Format des erreurs _(à venir)_
+## Format des erreurs
 
 Toutes les erreurs suivent le format standard **Problem Details** ([RFC 9457](https://www.rfc-editor.org/rfc/rfc9457)), intégré à ASP.NET Core (`AddProblemDetails`) :
 
@@ -98,9 +101,9 @@ Toutes les erreurs suivent le format standard **Problem Details** ([RFC 9457](ht
 - Erreur imprévue (`500`) : réponse générique, sans trace technique ni message d'exception ; le détail part dans les journaux du serveur.
 - Une erreur métier attendue (places insuffisantes, place déjà prise) n'est pas une exception non gérée : le handler renvoie un résultat d'échec, que l'endpoint traduit en code HTTP.
 
-## Authentification _(à venir, US 2.1)_
+## Authentification
 
-Les endpoints publics (programmation, places restantes) ne demandent rien. Les autres exigent un utilisateur connecté et, selon le cas, un rôle. Mécanisme et règles : [sécurité](../security/security.md#authentification-et-rôles).
+Les endpoints publics (programmation, places restantes, inscription, connexion) ne demandent rien. Les autres exigent un utilisateur connecté, et selon le cas un rôle : le front envoie le jeton reçu à l'inscription ou à la connexion dans l'en-tête `Authorization: Bearer <jeton>`. Sans jeton valide, la réponse est `401` ; avec un rôle insuffisant, `403`. Mécanisme et règles : [sécurité](../security/security.md#authentification-et-rôles).
 
 ## Faire évoluer le contrat
 

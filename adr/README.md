@@ -7,13 +7,13 @@ Un ADR (Architecture Decision Record) est une fiche courte qui consigne **une** 
 | N° | Décision | Statut |
 |---|---|---|
 | [0001](0001-backend-framework-aspnet-core.md) | Framework backend : ASP.NET Core | Accepté |
+| [0002](0002-authentication-jwt.md) | Authentification : jeton JWT et mots de passe hachés par PBKDF2 | Accepté |
 
 Décisions déjà prises, à rédiger :
 
 - Clean Architecture et CQRS sans bibliothèque ;
 - framework frontend : Angular ;
 - blocage des places en base PostgreSQL, sans Redis ;
-- authentification : hachage des mots de passe et mécanisme de session, avec l'US 2.1 ;
 - hébergement : AWS, région Paris, variante gratuite en conteneurs ;
 - stratégie du côté lecture (repository ou projection SQL), avant l'US 5.3.
 
