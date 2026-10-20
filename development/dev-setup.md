@@ -36,7 +36,7 @@ git clone https://github.com/Grand-Cinema-Studi/grand-cinema-docs.git
 | 3 | API | `dotnet run --project src/GrandCinema.Api` | http://localhost:5073 (Swagger : `/swagger`) | README du backend, étape 5 |
 | 4 | Front _(à venir)_ | `npm install` puis `npm start` | http://localhost:4200 | README du frontend |
 
-Le front appelle l'API par des chemins relatifs (`/api/...`). En local, le serveur de développement d'Angular redirige ces chemins vers l'API (proxy) _(à venir)_ ; en production, c'est le proxy Caddy qui le fait (voir [environnements](../deployment/environments.md)). Le front n'a donc jamais l'adresse de l'API en dur, et aucune configuration CORS n'est nécessaire.
+Le front appelle l'API par des chemins relatifs (`/api/...`). En local, le serveur de développement d'Angular redirige ces chemins vers l'API (proxy) _(à venir)_ ; sur la recette et en production, c'est CloudFront qui oriente `/api/*` vers l'API et le reste vers les fichiers du front sur S3 (voir [environnements](../deployment/environments.md)). Le front n'a donc jamais l'adresse de l'API en dur, et aucune configuration CORS n'est nécessaire.
 
 ## Secrets en local
 

@@ -23,7 +23,7 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 
 ## Routes
 
-- Préfixe `/api/` pour tout endpoint métier : le proxy de production oriente ces chemins vers l'API, le reste vers le front.
+- Préfixe `/api/` pour tout endpoint métier : CloudFront oriente ces chemins vers l'API, le reste vers les fichiers du front sur S3 (voir [environnements](../deployment/environments.md)).
 - Ressources au pluriel, en anglais, en kebab-case : `/api/screenings/{id}`, `/api/reservations`.
 - Le verbe HTTP porte l'action, pas l'URL : `POST /api/reservations`, et non `/api/create-reservation`.
 - Les filtres passent en paramètres de requête : `?date=2026-07-18`.
