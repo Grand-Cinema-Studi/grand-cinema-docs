@@ -7,7 +7,7 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 ## Principes
 
 - **Tester en continu**, à chaque commit et à chaque Pull Request, et non en fin de projet : une anomalie trouvée tard coûte plus cher.
-- **Pyramide des tests** : beaucoup de tests unitaires rapides, moins de tests d'intégration, peu de tests de bout en bout.
+- **Pyramide des tests** : beaucoup de tests unitaires rapides, moins de tests d'intégration, peu de tests de bout en bout. Les niveaux reprennent les quatre niveaux de l'ISTQB du Bloc 2 : unitaire, intégration, système, acceptation.
 - **TDD sur le code métier** (rouge, vert, refactor) : le test est écrit avant le code qu'il vérifie. C'est là qu'une erreur coûte le plus : programmation, places restantes, blocage et expiration, validation d'un billet.
 - **Un critère d'acceptation = au moins un test.** Le nom du test reprend le « Quand / Alors » du critère, et le test porte le numéro de sa story : on retrouve tous les tests d'une story, et la story de chaque test.
 - **Non-régression** : tous les tests automatisés sont rejoués à chaque Pull Request ; une nouvelle story ne doit jamais en casser une autre.
@@ -16,14 +16,16 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 
 | Niveau | Ce qui est vérifié | Outils | État |
 |---|---|---|---|
-| Unitaire | un handler ou une règle métier, isolé : dépendances simulées, aucune base | xUnit, Moq, Shouldly, `FakeTimeProvider` | ✅ 6 tests (US 1.1) |
-| Intégration (accès aux données) | un repository contre un vrai PostgreSQL, avec les vraies migrations | xUnit, Testcontainers (PostgreSQL 16 jetable) | ✅ 1 test (US 1.1) |
+| Unitaire | un handler ou une règle métier, isolé : dépendances simulées, aucune base | xUnit, Moq, Shouldly, `FakeTimeProvider` | ✅ 25 tests (US 1.1 : 6 ; US 2.1 : 19, sur sa branche) |
+| Intégration (accès aux données) | un repository contre un vrai PostgreSQL, avec les vraies migrations | xUnit, Testcontainers (PostgreSQL 16 jetable) | ✅ 3 tests (US 1.1 : 1 ; US 2.1 : 2, sur sa branche) |
 | Intégration (API) | un endpoint de bout en bout dans l'API : routage, sérialisation, codes HTTP, base réelle | `WebApplicationFactory`, Testcontainers | _(à venir)_ |
 | Concurrence | deux requêtes simultanées sur la dernière place : une seule réussit | Testcontainers, tâches parallèles | _(à venir, US 2.3)_ — voir [bug 0001](bugs/0001-double-booking.md) |
 | Composants front | un composant Angular isolé | outils de test d'Angular CLI | _(à venir)_ |
-| Bout en bout | le parcours complet dans un navigateur | à choisir avec le front (Selenium au Bloc 2) | _(à venir)_ |
-| Charge | la tenue des pics du festival | JMeter | hors périmètre de l'épreuve ; prévu avant une mise en production réelle |
-| Sécurité | failles courantes, dépendances vulnérables | SonarCloud, Dependabot, OWASP ZAP | _(à venir)_ |
+| Système / bout en bout | le parcours complet dans un navigateur : consulter, réserver, payer en mode test, recevoir le billet, le scanner | Selenium (Bloc 2), automatisé sur la recette, limité aux parcours critiques | _(à venir, avec le front)_ |
+| Performance / charge | la tenue des pics du festival : 200 utilisateurs simultanés sur une séance, 95 % des requêtes en moins de 2 s, zéro double vente | JMeter | en préproduction, avant chaque mise en production et avant le festival _(à venir ; préproduction non montée pour le projet)_ |
+| Sécurité | failles courantes (injection SQL, XSS, CSRF, force brute, QR code falsifié ou réutilisé), dépendances vulnérables | SonarCloud et Dependabot à chaque Pull Request ; scan OWASP ZAP en préproduction, à chaque release | _(à venir)_ |
+| Compatibilité / ergonomie | pages lisibles sur smartphone et ordinateur ; scan sur les vrais terminaux des contrôleurs | tests manuels guidés par une checklist | _(à venir, en recette, à chaque sprint)_ |
+| Acceptation (recette) | la conformité au besoin, vue par les métiers (exemple : le Responsable Programmation crée une séance et la retrouve dans la programmation publique) | cahier de recette (OK / KO), procès-verbal | _(à venir, au fil du sprint ; validation en revue de sprint)_ |
 
 ## Conventions d'écriture
 
@@ -58,6 +60,8 @@ refactor(us-1.1): extract movie schedule mapping
 
 Les Pull Requests fusionnées en merge commit conservent ces commits (voir le [workflow Git](../development/git-workflow.md#pull-requests)).
 
+Exception assumée : pour l'US 2.1, le code et les tests ont été écrits ensemble, en un seul passage (journal du backend, étape 12). Chaque test a été cassé volontairement pour vérifier qu'il sait échouer. Le cycle rouge, vert, refactor commit par commit reprend à partir de l'US 2.2.
+
 ## Couverture de code
 
 - Mesurée par **Coverlet** (`coverlet.collector`, déjà dans les projets de tests), qui produit un fichier `coverage.cobertura.xml` par projet de tests.
@@ -70,7 +74,7 @@ Les Pull Requests fusionnées en merge commit conservent ces commits (voir le [w
 
 - Envoyée à SonarCloud à chaque analyse _(à venir)_, voir [qualité du code](code-quality.md).
 - **Objectif : au moins 80 % sur le code métier** (handlers et domaine), comme fixé au Bloc 2. Le chiffre n'est pas une fin en soi : un pourcentage élevé prouve que le code a été exécuté, pas que les assertions vérifient les bons résultats. Ce qui compte, c'est que chaque règle et ses cas limites soient testés.
-- Le code sans logique (configuration EF Core, `Program.cs`, migrations générées) n'est pas compté dans l'objectif.
+- Le code sans logique (configuration EF Core, `Program.cs`, migrations générées) n'est pas compté dans l'objectif (paramètre `sonar.coverage.exclusions`).
 
 ## Environnements de test
 
@@ -78,9 +82,10 @@ Les Pull Requests fusionnées en merge commit conservent ces commits (voir le [w
 |---|---|---|
 | Poste du développeur | unitaires à chaque modification, tous avant de pousser | base de développement + données de démonstration ; base jetable pour l'intégration |
 | Intégration continue (GitHub Actions) _(à venir)_ | tous les tests automatisés, couverture, analyse SonarCloud, à chaque Pull Request | bases jetables, recréées à chaque exécution |
-| Démonstration (AWS) _(à venir)_ | vérification après déploiement (`/health`, programmation), recette manuelle | données de démonstration, jamais de données réelles |
+| Recette (AWS) _(à venir)_ | après chaque déploiement automatique (fusion dans `dev`) : test de fumée (`/health`, programmation, connexion), tests de bout en bout, recette métier au fil du sprint | données réalistes de démonstration, jamais de données réelles |
+| Préproduction (décrite, non montée pour le projet) | avant chaque release : scan OWASP ZAP, test de charge JMeter, migration rejouée | données anonymisées, au volume de la production |
 
-Le Bloc 2 prévoit un environnement de recette distinct de la production ; dans la variante gratuite retenue pour le projet, l'environnement de démonstration joue les deux rôles (voir [environnements](../deployment/environments.md)).
+Ces environnements sont ceux du Bloc 2. Pour le projet, seule la recette est en ligne : c'est l'adresse donnée au jury ; la préproduction et la production sont décrites dans [environnements](../deployment/environments.md).
 
 ## Anomalies
 

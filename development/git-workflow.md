@@ -65,7 +65,11 @@ Le dépôt de documentation n'a que `main`, sur laquelle arrivent les Pull Reque
 
 ### Livraison en production
 
-Une Pull Request `dev` → `main`, quand un incrément est terminé et que les [critères de mise en production](../deployment/deploy-guide.md#critères-de-mise-en-production) sont remplis. Sa fusion déclenche le déploiement _(à venir)_ et donne lieu à un tag de version (voir [versioning](versioning.md)).
+Une Pull Request `dev` → `main`, quand un incrément est terminé et que les [critères de mise en production](../deployment/deploy-guide.md#critères-de-mise-en-production) sont remplis. Sa fusion donne lieu à un tag de version (voir [versioning](versioning.md)) ; le déploiement en production attend ensuite l'approbation du Product Owner : c'est la mise en production manuelle du Bloc 2 _(à venir)_.
+
+### Déploiement de la recette
+
+Chaque fusion dans `dev` déploie automatiquement la recette (Bloc 2), front et back chacun par son pipeline _(à venir)_ : voir le [guide de déploiement](../deployment/deploy-guide.md).
 
 ### Correctif urgent
 

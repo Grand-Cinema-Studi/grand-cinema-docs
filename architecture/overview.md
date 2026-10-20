@@ -7,25 +7,34 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 ```mermaid
 flowchart LR
     user["Spectateur, personnel du cinéma<br/>(navigateur, ordinateur ou smartphone)"]
-    front["Frontend<br/>Angular (à venir)"]
-    api["API<br/>ASP.NET Core"]
-    db[("PostgreSQL 16")]
+    cdn["CloudFront<br/>CDN, HTTPS"]
+    front["Front-end Angular<br/>fichiers statiques sur S3 (à venir)"]
+    api["API Back-end<br/>ASP.NET Core sur EC2"]
+    db[("PostgreSQL 16<br/>RDS en production")]
+    tickets["S3<br/>billets et QR codes (à venir)"]
     stripe["Stripe<br/>paiement (à venir)"]
+    watch["CloudWatch<br/>supervision (à venir)"]
 
-    user -->|HTTPS| front
-    front -->|"HTTP JSON /api/..."| api
+    user -->|HTTPS| cdn
+    cdn -->|"fichiers du front"| front
+    cdn -->|"HTTP JSON /api/..."| api
     api -->|EF Core| db
+    api --> tickets
     api -->|"API Stripe"| stripe
+    api -.-> watch
 ```
 
 | Composant | Rôle | Dépôt |
 |---|---|---|
-| Frontend | application web (SPA) : programmation, compte, réservation, billets, écrans du personnel | [grand-cinema-frontend](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend) |
-| API | règles métier, sécurité, accès aux données ; aucune page HTML | [grand-cinema-backend](https://github.com/Grand-Cinema-Studi/grand-cinema-backend) |
+| CloudFront | CDN du Bloc 1 : HTTPS, une seule adresse ; oriente `/api/*` vers l'API et le reste vers les fichiers du front | configuration : [environnements](../deployment/environments.md) |
+| Front-end (Angular) | application web (SPA) : programmation, compte, réservation, billets, écrans du personnel ; fichiers statiques sur S3 | [grand-cinema-frontend](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend) |
+| API Back-end (ASP.NET Core) | règles métier, sécurité, accès aux données ; aucune page HTML ; conteneur Docker sur EC2 | [grand-cinema-backend](https://github.com/Grand-Cinema-Studi/grand-cinema-backend) |
 | PostgreSQL | utilisateurs, films, salles, places, séances, réservations | schéma : [erd.md](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/blob/dev/docs/database/erd.md) |
-| Stripe | paiement par carte ; aucune donnée de carte ne transite par l'application ni n'est stockée | service tiers |
+| S3 (billets) | billets dématérialisés et QR codes (US 3.2), usage séparé du bucket du front | AWS |
+| Stripe | paiement par carte ; aucune donnée de carte ne transite par l'application ni n'est stockée ; conformité PCI-DSS portée par Stripe | service tiers |
+| CloudWatch | supervision : métriques, journaux, alertes | AWS |
 
-Le front et l'API sont deux applications séparées qui ne communiquent que par HTTP et JSON : chacune se développe, se teste et se déploie seule.
+Le front et l'API sont deux applications séparées qui ne communiquent que par HTTP et JSON : chacune a son dépôt et son pipeline, et se développe, se teste et se déploie seule (front : S3 + CloudFront ; API : EC2).
 
 ## Modules fonctionnels de l'API
 
@@ -34,7 +43,7 @@ Découpage issu du Bloc 1, réalisé progressivement user story par user story :
 | Module | User stories | État |
 |---|---|---|
 | Programmation (consultation) | 1.1, 1.2 | ✅ `GET /api/schedule` |
-| Authentification | 2.1 | à venir |
+| Authentification | 2.1 | développée sur sa branche (`POST /api/users`, `POST /api/tokens`, `GET /api/users/me`), fusion dans `dev` à venir |
 | Réservation | 2.2, 2.3 | à venir |
 | Paiement | 3.1 | à venir |
 | Billets | 3.2, 4.1 | à venir |
@@ -73,14 +82,16 @@ Le parcours détaillé d'une requête est décrit dans le journal du backend ([f
 
 ## Hébergement
 
-| | Cible du Bloc 1 | Retenu pour la mise en ligne du projet |
+| | Cible du Bloc 1 | Recette du projet (mise en ligne) |
 |---|---|---|
 | Fournisseur | AWS, région Paris (`eu-west-3`) | AWS, région Paris (`eu-west-3`), compte Free plan |
-| Calcul | EC2, avec Auto Scaling pour les pics du festival | un serveur EC2, front, API et base en conteneurs Docker |
-| Base | RDS PostgreSQL (service géré) | PostgreSQL 16 en conteneur |
-| Raison | services gérés, montée en charge | budget nul ; l'image Docker de l'API permet de passer à RDS en changeant seulement la chaîne de connexion |
+| Front-end | S3 + CloudFront | S3 + CloudFront |
+| API Back-end | EC2 avec Auto Scaling pour les pics du festival | un serveur EC2, API en conteneur Docker |
+| Base | RDS PostgreSQL (service géré) | PostgreSQL 16 en conteneur sur le serveur |
+| HTTPS | de bout en bout | entre le navigateur et CloudFront ; HTTP entre CloudFront et le serveur, réservé à CloudFront |
+| Raison de l'écart | — | budget nul ; l'API est sans état et son image Docker permet de passer à l'Auto Scaling et à RDS sans changer le code |
 
-Détail : [deployment/environments.md](../deployment/environments.md).
+Détail : [deployment/environments.md](../deployment/environments.md) ; décision : [ADR 0003](../adr/0003-hosting-cloudfront-s3-ec2.md).
 
 ## Décisions liées
 
