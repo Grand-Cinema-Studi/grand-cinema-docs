@@ -8,7 +8,7 @@ Les schémas du projet sont écrits en **Mermaid**, directement dans les documen
 |---|---|---|
 | Composants de l'application (front, API, base, Stripe) | Mermaid | [overview.md](../overview.md#composants) |
 | Couches du backend (Clean Architecture) | Mermaid | [overview.md](../overview.md#architecture-du-backend) |
-| Architecture de production (serveur, conteneurs, proxy) | texte | [environments.md](../../deployment/environments.md#production--architecture-retenue) |
+| Architecture cible du Bloc 1 et recette du projet (CloudFront, S3, EC2, conteneurs) | texte | [environments.md](../../deployment/environments.md#architecture-cible-bloc-1), section « [Mise en ligne retenue](../../deployment/environments.md#mise-en-ligne-retenue-pour-le-projet--la-recette) » |
 | Modèle de données (7 tables) | Mermaid | [erd.md](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/blob/dev/docs/database/erd.md), dans le dépôt backend, à côté des migrations |
 | Parcours d'une requête (US 1.1) | texte | [from_scratch.md](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/blob/dev/from_scratch.md), section « Référence – Parcours d'une requête dans le code » |
 
