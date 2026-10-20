@@ -35,7 +35,7 @@ L'analyse automatique de SonarCloud ne prend pas en charge le C# : l'analyse est
    ```
 
    Coverlet produit la couverture au format OpenCover, que SonarCloud lit pour le C#.
-4. Exclure de l'analyse le code généré : `**/Migrations/**`.
+4. Exclure de l'analyse le code généré (`sonar.exclusions` : `**/Migrations/**`), et de la couverture le code sans logique (`sonar.coverage.exclusions` : `**/Program.cs`, `**/Migrations/**`, `**/Persistence/Configurations/**`, `**/DependencyInjection.cs`). Ajouter `sonar.qualitygate.wait=true` : l'intégration continue échoue quand le Quality Gate est rouge, donc la fusion est bloquée (critère de la Definition of Done du Bloc 2).
 5. Rendre la vérification SonarCloud obligatoire dans le ruleset de `main` et `dev` (voir le [workflow Git](../development/git-workflow.md#protections)).
 
 Même démarche pour le frontend, avec le scanner adapté et la couverture au format LCOV.
