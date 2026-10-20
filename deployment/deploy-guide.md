@@ -120,7 +120,7 @@ curl https://<adresse>/health             # Healthy
 curl https://<adresse>/api/schedule       # programmation du jour, datée du jour à Paris
 ```
 
-Puis, dans un navigateur : la page d'accueil du front (la nouvelle version s'affiche, pas l'ancienne : cache CloudFront invalidé), la connexion avec un compte de démonstration, et le parcours principal. En production, un paiement de contrôle est effectué puis remboursé.
+Puis, dans un navigateur : la page d'accueil du front (la nouvelle version s'affiche, pas l'ancienne : cache CloudFront invalidé), une route Angular rechargée directement (`/schedule`), la connexion avec un compte de démonstration, et le parcours principal. Un appel d'API refusé (par exemple `GET /api/users/me` sans jeton) répond toujours `401` au format Problem Details, et non une page HTML. En production, un paiement de contrôle est effectué puis remboursé.
 
 **Swagger pour la correction** : passer le paramètre `/grandcinema/recette/swagger-enabled` à `true` dans Parameter Store, relancer le déploiement du même commit (seule l'API redémarre), ouvrir `https://<adresse>/swagger`.
 

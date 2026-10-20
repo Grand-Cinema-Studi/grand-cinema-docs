@@ -68,7 +68,7 @@ SSM Session Manager   accès au serveur sans SSH ni port d'administration ouvert
 | Billets | S3 | à venir avec l'US 3.2 | story pas encore développée |
 
 - **Une seule adresse** pour le front et l'API : CloudFront transmet `/api/*` au serveur (cache désactivé, en-tête `Authorization` et toutes les méthodes HTTP transmis). Le navigateur appelle `/api/...` sur le site qu'il affiche, donc **pas de CORS** à configurer.
-- **Page d'accueil et routage Angular** : CloudFront renvoie `index.html` quand un chemin n'existe pas dans S3, pour que les routes de l'application fonctionnent au rechargement.
+- **Routage Angular** : une CloudFront Function (`spa-rewrite`, événement *viewer request*), attachée au **seul comportement par défaut**, sert `index.html` pour toute URL sans extension (`/schedule`, `/account`), pour que les routes de l'application fonctionnent au rechargement. Les « réponses d'erreur personnalisées » de CloudFront ne sont **pas** utilisées : elles s'appliquent à toute la distribution, et transformeraient les `403` et `404` de l'API en page HTML avec un code `200`, ce qui casserait le format Problem Details des [conventions d'API](../api/api-conventions.md).
 - **Migrations** appliquées par le déploiement, avant de démarrer la nouvelle version de l'API, jamais au démarrage de l'API.
 - **Fuseau horaire** : `TZ=Europe/Paris` dans les conteneurs, pour que « aujourd'hui » soit le jour à Paris. Les séances sont enregistrées à l'heure du cinéma, les instants techniques (création, expiration du blocage) en UTC.
 - **Passage à la cible** : l'image de l'API ne change pas ; on ajoute le répartiteur de charge et l'Auto Scaling, et la chaîne de connexion pointe vers RDS.

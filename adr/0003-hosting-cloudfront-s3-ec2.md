@@ -16,7 +16,7 @@
 1. L'environnement mis en ligne est la **recette** du Bloc 2. La préproduction et la production sont décrites, pas montées.
 2. **Front-end** : fichiers Angular compilés dans un bucket S3 privé, diffusés par CloudFront (accès au bucket réservé à CloudFront), publiés par le pipeline du dépôt du front (S3, puis invalidation du cache).
 3. **API Back-end et base** : un serveur EC2 `t3.micro` avec Docker Compose (API, migration, PostgreSQL 16 en conteneur), image dans GitHub Container Registry, secrets dans Parameter Store, déploiement par AWS Systems Manager, sans SSH.
-4. **Une seule adresse** : CloudFront oriente `/api/*`, `/health`, `/swagger*` et `/openapi/*` vers le serveur (cache désactivé, en-tête `Authorization` transmis), le reste vers S3. HTTPS entre le navigateur et CloudFront ; le serveur n'accepte que les adresses de CloudFront.
+4. **Une seule adresse** : CloudFront oriente `/api/*`, `/health`, `/swagger*` et `/openapi/*` vers le serveur (cache désactivé, en-tête `Authorization` transmis), le reste vers S3. HTTPS entre le navigateur et CloudFront ; le serveur n'accepte que les adresses de CloudFront. Le routage Angular passe par une CloudFront Function attachée au seul comportement par défaut, et non par les réponses d'erreur personnalisées, qui s'appliqueraient aussi aux erreurs de l'API.
 5. Recette déployée automatiquement à chaque fusion dans `dev` ; production manuelle, après approbation du Product Owner (environnement GitHub `production`).
 
 ## Alternatives écartées
