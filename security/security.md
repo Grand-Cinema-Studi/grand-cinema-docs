@@ -47,7 +47,8 @@ Les quatre rôles du Bloc 1 (`UserRole` dans le code) :
 
 ## Protection des données en transit et au repos
 
-- **HTTPS** obligatoire dès que l'authentification existe. L'environnement de démonstration est d'abord en HTTP ; un nom de domaine et un certificat Let's Encrypt (obtenu et renouvelé seul par le proxy Caddy) sont ajoutés avant l'US 2.1 _(à venir)_.
+- **HTTPS** obligatoire dès que l'authentification existe. Sur la recette, CloudFront fournit le HTTPS entre le navigateur et l'application (adresse `*.cloudfront.net`) _(à venir, mise en ligne)_ ; le tronçon CloudFront → serveur reste en HTTP, et le serveur n'accepte que les adresses de CloudFront (liste de préfixes gérée par AWS). En production : HTTPS de bout en bout (nom de domaine, certificat, répartiteur de charge), critère bloquant de mise en production ([guide de déploiement](../deployment/deploy-guide.md#critères-de-mise-en-production)).
+- Derrière CloudFront, l'API lit l'adresse du visiteur dans l'en-tête `X-Forwarded-For` (`UseForwardedHeaders`), pour que la limitation des tentatives de connexion s'applique par visiteur et non à tous à la fois _(à venir, mise en ligne)_.
 - La base PostgreSQL n'est joignable que par l'API : aucun port publié sur Internet.
 - Identifiants en GUID : impossibles à deviner ou à parcourir dans les URL.
 
@@ -55,7 +56,7 @@ Les quatre rôles du Bloc 1 (`UserRole` dans le code) :
 
 - **Aucun secret dans les dépôts, les images Docker ni GitHub.**
 - Développement : `.env` (ignoré par Git) et user-secrets .NET.
-- Production : AWS SSM Parameter Store, chiffré ; lu au déploiement par le rôle du serveur.
+- Recette et production : AWS SSM Parameter Store, chiffré (mot de passe de la base, clé de signature des jetons, clés Stripe) ; lu au déploiement par le rôle du serveur. La clé Stripe de test reste en recette ; la clé réelle n'existe qu'en production.
 - Intégration continue : accès à AWS par OIDC, sans clé stockée dans GitHub ; jeton SonarCloud en secret du dépôt _(à venir)_.
 
 Détail par environnement : [environnements](../deployment/environments.md#secrets-et-configuration).
@@ -76,7 +77,7 @@ Détail par environnement : [environnements](../deployment/environments.md#secre
 | Catégorie de risque | Mesure dans le projet | État |
 |---|---|---|
 | Contrôle d'accès défaillant | politiques par rôle vérifiées par l'API, accès refusé par défaut, accès limité à ses propres réservations, GUID | accès par défaut et GUID ✅ ; rôles et réservations _(à venir, US 2.3 et 5.2)_ |
-| Défaillances cryptographiques | mots de passe hachés et salés, HTTPS | hachage ✅ ; HTTPS _(à venir, mise en ligne)_ |
+| Défaillances cryptographiques | mots de passe hachés et salés, HTTPS | hachage ✅ ; HTTPS par CloudFront _(à venir, mise en ligne)_ |
 | Injection (SQL) | requêtes EF Core paramétrées, aucun SQL construit par concaténation | ✅ |
 | Injection (XSS) | échappement automatique des affichages par Angular | _(à venir, front)_ |
 | Conception non sécurisée | double vente empêchée par la base et par une transaction ([bug 0001](../quality/bugs/0001-double-booking.md)) | contrainte ✅, transaction _(à venir, US 2.3)_ |
