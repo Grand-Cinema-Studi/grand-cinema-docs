@@ -66,7 +66,7 @@ Le code doit se lire sans commentaire : noms explicites, méthodes courtes. Un c
 
 | Outil | Rôle | État |
 |---|---|---|
-| Compilateur C# (avertissements, nullable) | erreurs de typage, `null` possible | ✅ |
+| Compilateur C# (avertissements, nullable) | erreurs de typage, `null` possible | Fait |
 | `.editorconfig` et `dotnet format --verify-no-changes` | style et formatage identiques sur tous les postes, vérifiés en intégration continue | _(à venir)_ |
 | ESLint et Prettier | équivalent côté front | _(à venir)_ |
 | SonarCloud | bugs, vulnérabilités, duplication, couverture | _(à venir)_, voir [qualité du code](../quality/code-quality.md) |

@@ -16,8 +16,8 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 
 | Niveau | Ce qui est vérifié | Outils | État |
 |---|---|---|---|
-| Unitaire | un handler ou une règle métier, isolé : dépendances simulées, aucune base | xUnit, Moq, Shouldly, `FakeTimeProvider` | ✅ 25 tests (US 1.1 : 6 ; US 2.1 : 19, sur sa branche) |
-| Intégration (accès aux données) | un repository contre un vrai PostgreSQL, avec les vraies migrations | xUnit, Testcontainers (PostgreSQL 16 jetable) | ✅ 3 tests (US 1.1 : 1 ; US 2.1 : 2, sur sa branche) |
+| Unitaire | un handler ou une règle métier, isolé : dépendances simulées, aucune base | xUnit, Moq, Shouldly, `FakeTimeProvider` | Fait : 25 tests (US 1.1 : 6 ; US 2.1 : 19, sur sa branche) |
+| Intégration (accès aux données) | un repository contre un vrai PostgreSQL, avec les vraies migrations | xUnit, Testcontainers (PostgreSQL 16 jetable) | Fait : 3 tests (US 1.1 : 1 ; US 2.1 : 2, sur sa branche) |
 | Intégration (API) | un endpoint de bout en bout dans l'API : routage, sérialisation, codes HTTP, base réelle | `WebApplicationFactory`, Testcontainers | _(à venir)_ |
 | Concurrence | deux requêtes simultanées sur la dernière place : une seule réussit | Testcontainers, tâches parallèles | _(à venir, US 2.3)_ — voir [bug 0001](bugs/0001-double-booking.md) |
 | Composants front | un composant Angular isolé | outils de test d'Angular CLI | _(à venir)_ |

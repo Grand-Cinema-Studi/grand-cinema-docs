@@ -42,7 +42,7 @@ Découpage issu du Bloc 1, réalisé progressivement user story par user story :
 
 | Module | User stories | État |
 |---|---|---|
-| Programmation (consultation) | 1.1, 1.2 | ✅ `GET /api/schedule` |
+| Programmation (consultation) | 1.1, 1.2 | Fait (`GET /api/schedule`) |
 | Authentification | 2.1 | développée sur sa branche (`POST /api/users`, `POST /api/tokens`, `GET /api/users/me`), fusion dans `dev` à venir |
 | Réservation | 2.2, 2.3 | à venir |
 | Paiement | 3.1 | à venir |
@@ -70,8 +70,6 @@ flowchart TB
 - **Application** définit les interfaces dont elle a besoin (`IScreeningReadRepository`, …) ; **Infrastructure** les implémente. Les cas d'usage se testent donc sans base de données, avec des doublures.
 - **CQRS** au niveau des opérations : chaque lecture est une requête (`IQueryHandler`), chaque modification une commande (`ICommandHandler`), traitée par son handler. Pas de bibliothèque, pas de bus de messages : un simple appel de méthode.
 - **Api** ne contient aucune logique métier : un endpoint traduit la requête HTTP en requête ou commande CQRS, et renvoie le DTO en JSON.
-
-Le parcours détaillé d'une requête est décrit dans le journal du backend ([from_scratch.md](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/blob/dev/from_scratch.md), section « Parcours d'une requête dans le code »).
 
 ## Points d'architecture structurants
 

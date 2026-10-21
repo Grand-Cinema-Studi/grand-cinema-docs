@@ -33,12 +33,12 @@ Les quatre rôles du Bloc 1 (`UserRole` dans le code) :
 
 | Action | Visiteur | Spectateur (`Customer`) | Caissier (`Cashier`) | Contrôleur (`TicketInspector`) | Responsable (`Manager`) |
 |---|---|---|---|---|---|
-| Consulter la programmation et les places restantes | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Réserver et payer, voir ses billets | | ✅ | | | |
-| Consulter les réservations au guichet | | | ✅ (lecture seule) | | ✅ |
-| Scanner et valider un billet | | | | ✅ | |
-| Gérer la programmation | | | | | ✅ |
-| Suivre les réservations | | | | | ✅ |
+| Consulter la programmation et les places restantes | Oui | Oui | Oui | Oui | Oui |
+| Réserver et payer, voir ses billets | | Oui | | | |
+| Consulter les réservations au guichet | | | Oui (lecture seule) | | Oui |
+| Scanner et valider un billet | | | | Oui | |
+| Gérer la programmation | | | | | Oui |
+| Suivre les réservations | | | | | Oui |
 
 - Chaque endpoint déclare qui peut l'appeler (politiques d'autorisation d'ASP.NET Core) ; un endpoint sans déclaration n'est accessible qu'aux utilisateurs connectés (politique de repli), jamais par oubli au public.
 - Les droits sont vérifiés par l'API, jamais seulement par le front : masquer un bouton n'est pas une protection.
@@ -76,14 +76,14 @@ Détail par environnement : [environnements](../deployment/environments.md#secre
 
 | Catégorie de risque | Mesure dans le projet | État |
 |---|---|---|
-| Contrôle d'accès défaillant | politiques par rôle vérifiées par l'API, accès refusé par défaut, accès limité à ses propres réservations, GUID | accès par défaut et GUID ✅ ; rôles et réservations _(à venir, US 2.3 et 5.2)_ |
-| Défaillances cryptographiques | mots de passe hachés et salés, HTTPS | hachage ✅ ; HTTPS par CloudFront _(à venir, mise en ligne)_ |
-| Injection (SQL) | requêtes EF Core paramétrées, aucun SQL construit par concaténation | ✅ |
+| Contrôle d'accès défaillant | politiques par rôle vérifiées par l'API, accès refusé par défaut, accès limité à ses propres réservations, GUID | accès par défaut et GUID : fait ; rôles et réservations _(à venir, US 2.3 et 5.2)_ |
+| Défaillances cryptographiques | mots de passe hachés et salés, HTTPS | hachage : fait ; HTTPS par CloudFront _(à venir, mise en ligne)_ |
+| Injection (SQL) | requêtes EF Core paramétrées, aucun SQL construit par concaténation | Fait |
 | Injection (XSS) | échappement automatique des affichages par Angular | _(à venir, front)_ |
-| Conception non sécurisée | double vente empêchée par la base et par une transaction ([bug 0001](../quality/bugs/0001-double-booking.md)) | contrainte ✅, transaction _(à venir, US 2.3)_ |
-| Mauvaise configuration | Swagger désactivé par défaut, aucune trace technique dans les réponses d'erreur, un seul port ouvert | ✅ Swagger ; le reste _(à venir)_ |
-| Composants vulnérables | versions figées, alertes Dependabot, analyse SonarCloud | versions ✅ ; outils _(à venir)_ |
-| Authentification défaillante | limitation des tentatives, message d'échec neutre | ✅ |
+| Conception non sécurisée | double vente empêchée par la base et par une transaction ([bug 0001](../quality/bugs/0001-double-booking.md)) | contrainte : faite, transaction _(à venir, US 2.3)_ |
+| Mauvaise configuration | Swagger désactivé par défaut, aucune trace technique dans les réponses d'erreur, un seul port ouvert | Swagger : fait ; le reste _(à venir)_ |
+| Composants vulnérables | versions figées, alertes Dependabot, analyse SonarCloud | versions : fait ; outils _(à venir)_ |
+| Authentification défaillante | limitation des tentatives, message d'échec neutre | Fait |
 | Journalisation insuffisante | journaux de l'API (connexions refusées, erreurs), sans mot de passe ni donnée personnelle superflue | _(à venir)_ |
 
 ## Vérification

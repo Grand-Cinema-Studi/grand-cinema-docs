@@ -1,6 +1,6 @@
 # Guide de déploiement
 
-Comment livrer une version, la vérifier, revenir en arrière et protéger les données, selon la stratégie du Bloc 2. L'architecture et les secrets sont décrits dans [environnements](environments.md) ; les commandes de la première installation sont dans le journal du backend ([from_scratch.md](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/blob/dev/from_scratch.md)).
+Comment livrer une version, la vérifier, revenir en arrière et protéger les données, selon la stratégie du Bloc 2. L'architecture et les secrets sont décrits dans [environnements](environments.md).
 
 Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés : aucune version n'est encore en ligne.
 

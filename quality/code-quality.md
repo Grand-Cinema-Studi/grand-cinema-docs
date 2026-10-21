@@ -67,7 +67,7 @@ Juger le nouveau code plutôt que le total évite deux écueils : bloquer le pro
 
 | Contrôle | Ce qu'il apporte | État |
 |---|---|---|
-| Compilateur C#, nullable activé | erreurs de type et risques de `null` détectés à la compilation | ✅ |
-| Revue de chaque Pull Request | relecture du diff selon les [standards de code](../development/coding-standards.md#revue-de-code) | ✅ |
+| Compilateur C#, nullable activé | erreurs de type et risques de `null` détectés à la compilation | Fait |
+| Revue de chaque Pull Request | relecture du diff selon les [standards de code](../development/coding-standards.md#revue-de-code) | Fait |
 | `dotnet format --verify-no-changes` | formatage identique sur tous les postes | _(à venir)_ |
 | Dependabot | alerte, et propose une mise à jour, quand une bibliothèque utilisée a une faille connue | _(à venir)_ |

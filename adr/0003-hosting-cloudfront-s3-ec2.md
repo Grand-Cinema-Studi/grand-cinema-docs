@@ -2,14 +2,14 @@
 
 - Statut : Accepté
 - Concerne : les deux
-- Liens : [environnements](../deployment/environments.md), [guide de déploiement](../deployment/deploy-guide.md), journal du backend ([from_scratch.md](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/blob/dev/from_scratch.md), étapes 10 G et 11 G)
+- Liens : [environnements](../deployment/environments.md), [guide de déploiement](../deployment/deploy-guide.md).
 
 ## Contexte
 
 - Le Bloc 1 fixe l'architecture cible : AWS (`eu-west-3`), Front-end Angular en fichiers statiques sur S3 diffusés par CloudFront, API Back-end sur EC2 avec Auto Scaling, RDS PostgreSQL, S3 pour les billets, CloudWatch, Stripe.
 - Le Bloc 2 fixe la livraison : un dépôt et un pipeline par application ; recette déployée automatiquement après fusion dans la branche d'intégration ; préproduction identique à la production ; mise en production manuelle après validation du Product Owner ; HTTPS actif comme critère bloquant.
 - Le projet doit être en ligne pour la correction du Bloc 3, avec un budget nul (compte AWS Free plan).
-- Une première version du journal du backend mettait tout sur un serveur (front en conteneur derrière un proxy Caddy, en HTTP) : écart avec les Blocs 1 et 2.
+- Une première version du plan de déploiement mettait tout sur un serveur (front en conteneur derrière un proxy Caddy, en HTTP) : écart avec les Blocs 1 et 2.
 
 ## Décision
 

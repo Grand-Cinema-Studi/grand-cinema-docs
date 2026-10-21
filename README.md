@@ -6,7 +6,7 @@ Ce dépôt réunit ce qui concerne **l'application entière**, front et back ens
 
 ---
 
-## 🎬 Contexte du projet
+## Contexte du projet
 
 « Le Grand Cinéma » est un cinéma historique (50+ ans, **10 salles modulables, 1 700 places**) dont le fonctionnement est encore entièrement physique. Lors des pics d'affluence — notamment pendant le **Festival de Jazz** — les files d'attente dépassent 30 minutes, des spectateurs abandonnent leur achat et le remplissage des salles est mal optimisé.
 
@@ -14,38 +14,38 @@ Ce dépôt réunit ce qui concerne **l'application entière**, front et back ens
 
 **Profils utilisateurs identifiés** : Spectateur régulier · Festivalier / Touriste · Caissier · Contrôleur · Responsable Programmation / Direction.
 
-## 🗂️ Contenu
+## Contenu
 
 ```
 grand-cinema-docs/
 ├── README.md
-├── architecture/              🏗️ architecture
+├── architecture/              architecture
 │   ├── overview.md            vue d'ensemble : composants, couches du backend, hébergement
 │   ├── glossary.md            vocabulaire métier (français) ↔ noms du code (anglais)
 │   └── diagrams/              index des schémas et exports en image
-├── adr/                       🧭 décisions techniques, une par fichier, numérotées
-├── development/               🛠️ développer
+├── adr/                       décisions techniques, une par fichier, numérotées
+├── development/               développer
 │   ├── dev-setup.md           préparer un poste et lancer l'application en local
 │   ├── git-workflow.md        branches, protections, Pull Requests, messages de commit
 │   ├── coding-standards.md    structure, nommage, écriture du code, revue
 │   └── versioning.md          ce qui est versionné, numéros de version, tags
-├── api/                       🔌 contrat front ↔ back
+├── api/                       contrat front ↔ back
 │   └── api-conventions.md     routes, format des données, codes HTTP, erreurs, Swagger
-├── quality/                   ✅ qualité et tests
+├── quality/                   qualité et tests
 │   ├── testing-strategy.md    niveaux de tests, TDD, couverture, anomalies
 │   ├── code-quality.md        SonarCloud et quality gate
 │   └── bugs/                  analyses d'anomalies : identification, reproduction, correctif, validation
-├── security/                  🛡️ sécurité
+├── security/                  sécurité
 │   ├── security.md            authentification, rôles, secrets, paiement, Top 10 de l'OWASP
 │   └── gdpr.md                données personnelles, conservation, droits (RGPD)
-└── deployment/                🚀 mise en ligne
+└── deployment/                mise en ligne
     ├── environments.md        environnements, architecture de production, secrets, CI/CD
     └── deploy-guide.md        déployer, vérifier, revenir en arrière, sauvegarder
 ```
 
 Les éléments marqués _(à venir)_ dans les documents sont décidés mais pas encore réalisés.
 
-### 🏗️ Architecture et décisions
+### Architecture et décisions
 
 | Document | Pour répondre à |
 |---|---|
@@ -54,7 +54,7 @@ Les éléments marqués _(à venir)_ dans les documents sont décidés mais pas 
 | [Schémas](architecture/diagrams/README.md) | Où trouver chaque schéma, et comment l'exporter ? |
 | [Décisions d'architecture (ADR)](adr/README.md) | Pourquoi ce choix plutôt qu'un autre ? |
 
-### 🛠️ Développement
+### Développement
 
 | Document | Pour répondre à |
 |---|---|
@@ -63,13 +63,13 @@ Les éléments marqués _(à venir)_ dans les documents sont décidés mais pas 
 | [Standards de code](development/coding-standards.md) | Où ranger mon code, comment le nommer, que vérifie la revue ? |
 | [Versioning](development/versioning.md) | Qu'est-ce qui est versionné, et comment une version est-elle numérotée ? |
 
-### 🔌 API
+### API
 
 | Document | Pour répondre à |
 |---|---|
 | [Conventions de l'API](api/api-conventions.md) | Quelle forme ont les routes, les données et les erreurs échangées entre le front et le back ? |
 
-### ✅ Qualité
+### Qualité
 
 | Document | Pour répondre à |
 |---|---|
@@ -77,21 +77,21 @@ Les éléments marqués _(à venir)_ dans les documents sont décidés mais pas 
 | [Qualité du code](quality/code-quality.md) | Quels contrôles automatiques, et quels seuils bloquent une fusion ? |
 | [Bug 0001 – Double réservation](quality/bugs/0001-double-booking.md) | Comment la même place pourrait-elle être vendue deux fois, et comment l'empêcher ? |
 
-### 🛡️ Sécurité
+### Sécurité
 
 | Document | Pour répondre à |
 |---|---|
 | [Sécurité](security/security.md) | Qui peut faire quoi, et comment l'application est-elle protégée ? |
 | [Données personnelles (RGPD)](security/gdpr.md) | Quelles données sont traitées, pourquoi, et combien de temps ? |
 
-### 🚀 Déploiement
+### Déploiement
 
 | Document | Pour répondre à |
 |---|---|
 | [Environnements](deployment/environments.md) | Où tourne l'application, et comment est-elle configurée ? |
 | [Guide de déploiement](deployment/deploy-guide.md) | Comment mettre en ligne une version, revenir en arrière, restaurer la base ? |
 
-## 📍 Où se trouve quelle documentation
+## Où se trouve quelle documentation
 
 | Documentation | Emplacement | Raison |
 |---|---|---|
@@ -103,7 +103,7 @@ Les éléments marqués _(à venir)_ dans les documents sont décidés mais pas 
 
 Règle : une Pull Request du front ou du back qui change l'architecture ou prend une décision technique s'accompagne d'une Pull Request dans ce dépôt (nouvel ADR ou document mis à jour), citée dans sa description.
 
-## 🔗 Liens
+## Liens
 
 | Ressource | Lien |
 |---|---|
@@ -113,12 +113,12 @@ Règle : une Pull Request du front ou du back qui change l'architecture ou prend
 | Suivi du projet (Project GitHub n° 3) | https://github.com/orgs/Grand-Cinema-Studi/projects/3 |
 | Application déployée | _À venir_ |
 
-## ✍️ Contribuer
+## Contribuer
 
 Même fonctionnement que les dépôts de code ([workflow Git](development/git-workflow.md)) : une branche `docs/<sujet>` par modification, une Pull Request vers `main`, des messages de commit au format [Conventional Commits](https://www.conventionalcommits.org/fr/) (`docs(adr): …`, `docs(architecture): …`).
 
 Les documents sont rédigés en français ; les noms de fichiers sont en anglais, comme dans le code.
 
-## ✍️ Auteur
+## Auteur
 
 **Slimane Smahi** — Bachelor Développeur d'Application, Studi

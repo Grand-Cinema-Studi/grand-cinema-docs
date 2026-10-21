@@ -32,8 +32,8 @@ Le front et l'API sont deux applications séparées, qui ne communiquent que par
 
 | Environnement | Rôle | Base de données | Paiement | État |
 |---|---|---|---|---|
-| Développement (poste) | écrire le code et les tests unitaires | PostgreSQL 16 en Docker Compose, jeux de données générés | Stripe simulé (doublure) | ✅ en place |
-| Test (intégration continue) | exécuter les tests automatisés à chaque Pull Request | PostgreSQL jetable (Testcontainers), recréé à chaque exécution avec les mêmes jeux de données | Stripe simulé, puis mode test | ✅ tests d'intégration en local ; CI _(à venir)_ |
+| Développement (poste) | écrire le code et les tests unitaires | PostgreSQL 16 en Docker Compose, jeux de données générés | Stripe simulé (doublure) | En place |
+| Test (intégration continue) | exécuter les tests automatisés à chaque Pull Request | PostgreSQL jetable (Testcontainers), recréé à chaque exécution avec les mêmes jeux de données | Stripe simulé, puis mode test | Tests d'intégration en local ; CI _(à venir)_ |
 | Recette | tests de bout en bout, recette métier au fil du sprint | données réalistes (salles de 70 à 300 places, séances presque complètes, période de festival) | Stripe en mode test | **environnement de démonstration du projet** _(à venir)_ |
 | Préproduction | valider la version complète avant la mise en production ; identique à la production, allumée seulement pour une release | données anonymisées, au volume de la production | Stripe en mode test | décrite, non montée |
 | Production | service réel | données réelles | Stripe réel | décrite, non montée |
@@ -74,7 +74,7 @@ SSM Session Manager   accès au serveur sans SSH ni port d'administration ouvert
 - **Passage à la cible** : l'image de l'API ne change pas ; on ajoute le répartiteur de charge et l'Auto Scaling, et la chaîne de connexion pointe vers RDS.
 - **Repli** : si CloudFront n'était pas disponible avec le type de compte AWS utilisé, le front serait servi par un proxy sur le même serveur (HTTP, sans nom de domaine). C'est un écart à la cible, à dire explicitement.
 
-Déployer, vérifier, revenir en arrière, sauvegarder : [guide de déploiement](deploy-guide.md). Les commandes de la première installation sont dans le journal du backend, [from_scratch.md](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/blob/dev/from_scratch.md).
+Déployer, vérifier, revenir en arrière, sauvegarder : [guide de déploiement](deploy-guide.md).
 
 ## Secrets et configuration
 
