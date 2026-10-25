@@ -16,14 +16,14 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 
 | Niveau | Ce qui est vérifié | Outils | État |
 |---|---|---|---|
-| Unitaire | un handler ou une règle métier, isolé : dépendances simulées, aucune base | xUnit, Moq, Shouldly, `FakeTimeProvider` | Fait : 25 tests (US 1.1 : 6 ; US 2.1 : 19, sur sa branche) |
-| Intégration (accès aux données) | un repository contre un vrai PostgreSQL, avec les vraies migrations | xUnit, Testcontainers (PostgreSQL 16 jetable) | Fait : 3 tests (US 1.1 : 1 ; US 2.1 : 2, sur sa branche) |
+| Unitaire | un handler ou une règle métier, isolé : dépendances simulées, aucune base | xUnit, Moq, Shouldly, `FakeTimeProvider` | Fait : 43 tests (US 1.1 : 9 ; US 2.1 : 34) |
+| Intégration (accès aux données) | un repository contre un vrai PostgreSQL, avec les vraies migrations | xUnit, Testcontainers (PostgreSQL 16 jetable) | Fait : 4 tests (US 1.1 : 2 ; US 2.1 : 2) |
 | Intégration (API) | un endpoint de bout en bout dans l'API : routage, sérialisation, codes HTTP, base réelle | `WebApplicationFactory`, Testcontainers | _(à venir)_ |
 | Concurrence | deux requêtes simultanées sur la dernière place : une seule réussit | Testcontainers, tâches parallèles | _(à venir, US 2.3)_ — voir [bug 0001](bugs/0001-double-booking.md) |
 | Composants front | un composant Angular isolé | outils de test d'Angular CLI | _(à venir)_ |
 | Système / bout en bout | le parcours complet dans un navigateur : consulter, réserver, payer en mode test, recevoir le billet, le scanner | Selenium (Bloc 2), automatisé sur la recette, limité aux parcours critiques | _(à venir, avec le front)_ |
 | Performance / charge | la tenue des pics du festival : 200 utilisateurs simultanés sur une séance, 95 % des requêtes en moins de 2 s, zéro double vente | JMeter | en préproduction, avant chaque mise en production et avant le festival _(à venir ; préproduction non montée pour le projet)_ |
-| Sécurité | failles courantes (injection SQL, XSS, CSRF, force brute, QR code falsifié ou réutilisé), dépendances vulnérables | SonarCloud et Dependabot à chaque Pull Request ; scan OWASP ZAP en préproduction, à chaque release | _(à venir)_ |
+| Sécurité | failles courantes (injection SQL, XSS, CSRF, force brute, QR code falsifié ou réutilisé), dépendances vulnérables | SonarCloud et Dependabot à chaque Pull Request ; scan OWASP ZAP en préproduction, à chaque release | SonarCloud et Dependabot : fait (25/10/2026) ; OWASP ZAP _(à venir)_ |
 | Compatibilité / ergonomie | pages lisibles sur smartphone et ordinateur ; scan sur les vrais terminaux des contrôleurs | tests manuels guidés par une checklist | _(à venir, en recette, à chaque sprint)_ |
 | Acceptation (recette) | la conformité au besoin, vue par les métiers (exemple : le Responsable Programmation crée une séance et la retrouve dans la programmation publique) | cahier de recette (OK / KO), procès-verbal | _(à venir, au fil du sprint ; validation en revue de sprint)_ |
 
@@ -45,7 +45,7 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 dotnet test                                        # tous les tests (Docker doit tourner)
 dotnet test --filter "Category!=Integration"       # tests unitaires seuls
 dotnet test --filter "US=1.1"                      # tests d'une user story
-dotnet test --collect:"XPlat Code Coverage"        # avec mesure de la couverture
+dotnet test --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults   # avec mesure de la couverture
 ```
 
 ## Preuve du TDD
@@ -64,25 +64,53 @@ Exception assumée : pour l'US 2.1, le code et les tests ont été écrits ensem
 
 ## Couverture de code
 
-- Mesurée par **Coverlet** (`coverlet.collector`, déjà dans les projets de tests), qui produit un fichier `coverage.cobertura.xml` par projet de tests.
-- Rapport HTML lisible avec **ReportGenerator** :
+- Mesurée par **Coverlet** (`coverlet.collector`, dans les projets de tests). Les réglages sont dans **`coverlet.runsettings`**, à la racine du dépôt backend, lu à l'identique par les postes et par l'intégration continue : les chiffres sont les mêmes partout.
+  - Formats produits : **OpenCover** (lu par SonarCloud) et **Cobertura** (lu par ReportGenerator).
+  - **`SkipAutoProps`** : les propriétés automatiques (`public string Title { get; set; }`) ne sont pas comptées. Elles sont écrites par le compilateur et ne contiennent aucune logique ; les compter pousserait à écrire des tests qui affectent puis relisent une valeur, sans rien vérifier.
+- Rapport par couche et par classe avec **ReportGenerator**, avec les mêmes exclusions que SonarCloud :
 
   ```bash
-  dotnet tool install -g dotnet-reportgenerator-globaltool
-  reportgenerator -reports:"tests/**/TestResults/**/coverage.cobertura.xml" -targetdir:coverage-report -reporttypes:Html
+  dotnet tool install --global dotnet-reportgenerator-globaltool
+  rm -rf TestResults
+  dotnet test --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
+  reportgenerator -reports:"TestResults/**/coverage.cobertura.xml" -targetdir:"TestResults/coverage-report" \
+    -reporttypes:"TextSummary;Html" \
+    -filefilters:"-**/Program.cs;-**/Migrations/**;-**/Persistence/Configurations/**;-**/DependencyInjection.cs"
+  cat TestResults/coverage-report/Summary.txt     # TestResults/ est ignoré par Git
   ```
 
-- Envoyée à SonarCloud à chaque analyse _(à venir)_, voir [qualité du code](code-quality.md).
-- **Objectif : au moins 80 % sur le code métier** (handlers et domaine), comme fixé au Bloc 2. Le chiffre n'est pas une fin en soi : un pourcentage élevé prouve que le code a été exécuté, pas que les assertions vérifient les bons résultats. Ce qui compte, c'est que chaque règle et ses cas limites soient testés.
-- Le code sans logique (configuration EF Core, `Program.cs`, migrations générées) n'est pas compté dans l'objectif (paramètre `sonar.coverage.exclusions`).
+- Envoyée à SonarCloud à chaque analyse, voir [qualité du code](code-quality.md).
+- **Objectif : au moins 80 % sur le code métier** (domaine et cas d'usage), comme fixé au Bloc 2. Le chiffre n'est pas une fin en soi : un pourcentage élevé prouve que le code a été exécuté, pas que les assertions vérifient les bons résultats. Ce qui compte, c'est que chaque règle et ses cas limites soient testés, et que chaque test ait été vu échouer.
+- Le code sans logique (configuration EF Core, `Program.cs`, enregistrement des dépendances, migrations générées) n'est pas compté (paramètre `sonar.coverage.exclusions`, et `-filefilters` de ReportGenerator).
+
+### Mesure du 25/10/2026
+
+| Couche | Lignes | Lecture |
+|---|---|---|
+| Domaine | aucune ligne à couvrir | entités sans règle pour l'instant (propriétés seules). Le projet `GrandCinema.Domain.Tests` est gardé, vide : il accueillera les premières règles du domaine (blocage et expiration des places, US 2.3) |
+| Cas d'usage (`GrandCinema.Application`) | **100 %** | toutes les classes à 100 % |
+| Infrastructure | 96,1 % | seul `GrandCinemaDbContext` (69 %) : ses ensembles des places et des réservations, pas encore utilisés (US 2.2 et 2.3) |
+| **Total mesuré** | **98,5 % des lignes, 97,7 % des branches** (43 sur 44) | 47 tests |
+
+Démarche suivie pour y arriver, à partir de 87,7 % (et 51 % sur le domaine, dû aux seules propriétés) :
+
+1. Mesure par couche et par classe, avant d'écrire un test, pour viser les règles réellement non vérifiées.
+2. `SkipAutoProps` (ci-dessus).
+3. Tests ajoutés sur des règles non vérifiées, chacun cassé volontairement pour prouver qu'il échoue sans la règle :
+   - connexion : adresse vide ou blanche, mot de passe vide, refusés **sans interroger la base** (vérifié par `Verify(..., Times.Never)` : sans lui, le résultat serait le même et le test ne prouverait rien) ;
+   - inscription : chaque champ invalide seul (dont le nom de famille), les longueurs maximales dépassées (adresse 256, mot de passe 128, prénom et nom 100) et acceptées exactement à la limite (un `>=` à la place du `>` est détecté) ;
+   - configuration JWT : valeur manquante nommée dans l'erreur, clé de signature de 31 octets refusée et de 32 acceptée, durée de 60 minutes par défaut.
+4. Code mort supprimé plutôt que testé : `Error.Forbidden`, jamais appelée (le refus 403 d'un utilisateur sans le bon rôle vient de l'autorisation d'ASP.NET Core, avant le handler).
+
+Reste : la couche API (endpoints) n'a pas encore de tests. Elle n'entre pas dans l'objectif du code métier, mais SonarCloud la compte dans le total, et le Quality Gate exige 80 % sur le **nouveau code** de chaque Pull Request : des tests d'API (`WebApplicationFactory`) sont donc nécessaires avant la prochaine story qui ajoute un endpoint (US 2.2) _(à venir)_.
 
 ## Environnements de test
 
 | Environnement | Tests exécutés | Données |
 |---|---|---|
 | Poste du développeur | unitaires à chaque modification, tous avant de pousser | base de développement + données de démonstration ; base jetable pour l'intégration |
-| Intégration continue (GitHub Actions) _(à venir)_ | tous les tests automatisés, couverture, analyse SonarCloud, à chaque Pull Request | bases jetables, recréées à chaque exécution |
-| Recette (AWS) _(à venir)_ | après chaque déploiement automatique (fusion dans `dev`) : test de fumée (`/health`, programmation, connexion), tests de bout en bout, recette métier au fil du sprint | données réalistes de démonstration, jamais de données réelles |
+| Intégration continue (GitHub Actions) | tous les tests automatisés, formatage, couverture, analyse SonarCloud, à chaque Pull Request ; fusion bloquée si un contrôle est rouge | bases jetables, recréées à chaque exécution |
+| Recette (AWS) | après chaque déploiement automatique (fusion dans `dev`) : test de fumée `/health` par CloudFront, automatique ; programmation et connexion vérifiées à la main ; tests de bout en bout _(à venir)_ ; recette métier au fil du sprint | données réalistes de démonstration, jamais de données réelles |
 | Préproduction (décrite, non montée pour le projet) | avant chaque release : scan OWASP ZAP, test de charge JMeter, migration rejouée | données anonymisées, au volume de la production |
 
 Ces environnements sont ceux du Bloc 2. Pour le projet, seule la recette est en ligne : c'est l'adresse donnée au jury ; la préproduction et la production sont décrites dans [environnements](../deployment/environments.md).

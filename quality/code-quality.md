@@ -35,11 +35,11 @@ L'analyse automatique de SonarCloud ne prend pas en charge le C# : elle est dés
      /d:sonar.exclusions="**/Migrations/**,**/*.sql" \
      /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**,**/Persistence/Configurations/**,**/DependencyInjection.cs"
    dotnet build --no-restore --configuration Release
-   dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage;Format=opencover" --results-directory TestResults
+   dotnet test --no-build --configuration Release --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
    dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
    ```
 
-   - Coverlet produit la couverture au format OpenCover, que SonarCloud lit pour le C# ; `--results-directory` réunit les rapports des trois projets de tests au même endroit.
+   - Coverlet produit la couverture au format OpenCover, que SonarCloud lit pour le C# ; ses réglages (formats, propriétés automatiques non comptées) sont dans `coverlet.runsettings`, partagé avec les postes ([stratégie de tests](testing-strategy.md#couverture-de-code)) ; `--results-directory` réunit les rapports des projets de tests au même endroit.
    - `dotnet format` passe **avant** `sonarscanner begin` : le scanner ajoute ses propres analyseurs au build, et `dotnet format` les prendrait pour des écarts du projet (échec rencontré sur la règle S6966).
    - Exclusions de l'analyse : le code généré (`**/Migrations/**`) et les scripts SQL de démonstration (`**/*.sql`), que SonarCloud prenait pour du PL/SQL Oracle alors qu'ils sont écrits pour PostgreSQL. Exclusions de la couverture : le code sans logique (`Program.cs`, configurations EF Core, enregistrement des dépendances).
    - `sonar.qualitygate.wait=true` : le job échoue quand le Quality Gate est rouge.
@@ -104,6 +104,19 @@ SonarCloud analyse aussi les workflows GitHub Actions. Sur la Pull Request `chor
 |---|---|---|---|---|---|
 | 6 | Sécurité : épingler une dépendance sur l'empreinte complète d'un commit (échec) | `.github/workflows/deploy.yml`, `docker/login-action` et `aws-actions/configure-aws-credentials` | une étiquette comme `@v3` est mobile : déplacée vers un autre code par son propriétaire ou par un attaquant ayant pris son dépôt, elle s'exécuterait avec les permissions du job (publication d'images, accès AWS) | **Corrigé** : actions tierces épinglées sur l'empreinte du commit, version en commentaire (`@81c6f93… # v4.7.0`) ; Dependabot met à jour l'empreinte et le commentaire | `chore/continuous-deployment` |
 | 7 | Sécurité : permission d'écriture déclarée pour tout le workflow (avertissement, 2 occurrences) | `.github/workflows/deploy.yml`, `id-token: write` et `packages: write` | le job de tests recevait des droits dont il n'a pas besoin | **Corrigé** : `permissions: {}` pour le workflow, droits déclarés par job (moindre privilège) ; la dernière étape passe aussi l'adresse de l'API par `env:` plutôt que par une expression dans le script (injection de script) | `chore/continuous-deployment` |
+
+### Couverture du code métier (25/10/2026)
+
+Branche `test/business-code-coverage`. Mesure par couche avec ReportGenerator, avec les exclusions de SonarCloud : 87,7 % au départ (domaine 51 %, uniquement des propriétés), **98,5 % des lignes et 97,7 % des branches** à l'arrivée ; cas d'usage à **100 %**. Détail de la démarche dans la [stratégie de tests](testing-strategy.md#mesure-du-25102026).
+
+| Décision | Pourquoi |
+|---|---|
+| Propriétés automatiques non comptées (`SkipAutoProps`, `coverlet.runsettings` partagé par les postes et la CI) | aucune logique à tester ; les compter pousserait à des tests sans assertion utile |
+| Tests ajoutés sur les règles non vérifiées (connexion vide, longueurs d'inscription, configuration JWT), chacun cassé volontairement avant d'être gardé | la couverture sert à trouver les règles non testées, pas à atteindre un chiffre |
+| `Error.Forbidden` supprimée (méthode, valeur `ErrorType.Forbidden` et traduction en 403) | jamais appelée : un test sur du code mort ne prouve rien ; le 403 vient de l'autorisation d'ASP.NET Core |
+| Dossier `Features/Movies/DTOS` renommé `DTOs` dans Git | homogène avec les autres fonctionnalités ; Windows ne voit pas la différence de casse, Linux (CI, serveur) oui |
+
+La couche API n'a pas encore de tests : SonarCloud la compte dans le total, d'où un chiffre global inférieur à celui du code métier. Tests d'API (`WebApplicationFactory`) _(à venir, avant l'US 2.2)_.
 
 ## Autres contrôles
 
