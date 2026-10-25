@@ -96,6 +96,15 @@ Chaque correction issue d'une analyse est consignée ci-dessous (règle, fichier
 
 Couverture : 72,3 % sur tout le code, sous l'objectif de 80 % de la stratégie de tests, qui porte sur le code métier (domaine et cas d'usage). Les endpoints HTTP n'ont pas encore de tests d'API (`WebApplicationFactory`, prévus en phase 7) : à analyser fichier par fichier, puis à combler ou à justifier _(à venir)_.
 
+### Pull Request du déploiement continu (25/10/2026)
+
+SonarCloud analyse aussi les workflows GitHub Actions. Sur la Pull Request `chore/continuous-deployment`, le Quality Gate a échoué (« C Security Rating on New Code ») : la fusion a été bloquée jusqu'à la correction.
+
+| # | Règle | Fichier | Problème | Décision et correction | Pull Request |
+|---|---|---|---|---|---|
+| 6 | Sécurité : épingler une dépendance sur l'empreinte complète d'un commit (échec) | `.github/workflows/deploy.yml`, `docker/login-action` et `aws-actions/configure-aws-credentials` | une étiquette comme `@v3` est mobile : déplacée vers un autre code par son propriétaire ou par un attaquant ayant pris son dépôt, elle s'exécuterait avec les permissions du job (publication d'images, accès AWS) | **Corrigé** : actions tierces épinglées sur l'empreinte du commit, version en commentaire (`@81c6f93… # v4.7.0`) ; Dependabot met à jour l'empreinte et le commentaire | `chore/continuous-deployment` |
+| 7 | Sécurité : permission d'écriture déclarée pour tout le workflow (avertissement, 2 occurrences) | `.github/workflows/deploy.yml`, `id-token: write` et `packages: write` | le job de tests recevait des droits dont il n'a pas besoin | **Corrigé** : `permissions: {}` pour le workflow, droits déclarés par job (moindre privilège) ; la dernière étape passe aussi l'adresse de l'API par `env:` plutôt que par une expression dans le script (injection de script) | `chore/continuous-deployment` |
+
 ## Autres contrôles
 
 | Contrôle | Ce qu'il apporte | État |
@@ -104,4 +113,4 @@ Couverture : 72,3 % sur tout le code, sous l'objectif de 80 % de la stratégie d
 | Revue de chaque Pull Request | relecture du diff selon les [standards de code](../development/coding-standards.md#revue-de-code) | Fait |
 | `dotnet format --verify-no-changes` | formatage identique sur tous les postes, vérifié par la CI à chaque Pull Request ; mise en forme initiale de tout le code dans un commit `style:` séparé | Fait (25/10/2026) |
 | `.editorconfig` | réglages des règles par dossier (CA1861 désactivée dans les tests, avec la raison) | Fait (25/10/2026) |
-| Dependabot | alerte, et propose une mise à jour, quand une bibliothèque utilisée a une faille connue | _(à venir)_ |
+| Dependabot | alerte, et propose une mise à jour, quand une dépendance (paquet NuGet, action GitHub, image Docker) a une faille connue ou une nouvelle version | Fait (25/10/2026) |
