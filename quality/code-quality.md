@@ -33,7 +33,7 @@ L'analyse automatique de SonarCloud ne prend pas en charge le C# : elle est dés
      /d:sonar.qualitygate.wait=true \
      /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml" \
      /d:sonar.exclusions="**/Migrations/**,**/*.sql" \
-     /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**,**/Persistence/Configurations/**,**/DependencyInjection.cs"
+     /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**,**/Persistence/Configurations/**,**/DependencyInjection.cs,scripts/**"
    dotnet build --no-restore --configuration Release
    dotnet test --no-build --configuration Release --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
    dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
@@ -41,13 +41,13 @@ L'analyse automatique de SonarCloud ne prend pas en charge le C# : elle est dés
 
    - Coverlet produit la couverture au format OpenCover, que SonarCloud lit pour le C# ; ses réglages (formats, propriétés automatiques non comptées) sont dans `coverlet.runsettings`, partagé avec les postes ([stratégie de tests](testing-strategy.md#couverture-de-code)) ; `--results-directory` réunit les rapports des projets de tests au même endroit.
    - `dotnet format` passe **avant** `sonarscanner begin` : le scanner ajoute ses propres analyseurs au build, et `dotnet format` les prendrait pour des écarts du projet (échec rencontré sur la règle S6966).
-   - Exclusions de l'analyse : le code généré (`**/Migrations/**`) et les scripts SQL de démonstration (`**/*.sql`), que SonarCloud prenait pour du PL/SQL Oracle alors qu'ils sont écrits pour PostgreSQL. Exclusions de la couverture : le code sans logique (`Program.cs`, configurations EF Core, enregistrement des dépendances).
+   - Exclusions de l'analyse : le code généré (`**/Migrations/**`) et les scripts SQL de démonstration (`**/*.sql`), que SonarCloud prenait pour du PL/SQL Oracle alors qu'ils sont écrits pour PostgreSQL. Exclusions de la couverture : le code sans logique (`Program.cs`, configurations EF Core, enregistrement des dépendances) et les scripts d'outillage lancés à la main (`scripts/**`).
    - `sonar.qualitygate.wait=true` : le job échoue quand le Quality Gate est rouge.
 4. Déclenchement : chaque Pull Request vers `dev` ou `main`, et chaque push sur `dev`.
 5. **Branche principale SonarCloud : `dev`.** Le plan Free n'analyse que la branche principale et les Pull Requests ; le premier push sur `dev` échouait (« Organization is not allowed to access data from non main branches »). `dev` étant la branche d'intégration et celle déployée en recette, c'est elle qui sert de référence au nouveau code ; les Pull Requests vers `main` restent analysées.
 6. Contrôles `build-and-test` et « SonarCloud Code Analysis » obligatoires dans le ruleset `protect-main-and-dev` (voir le [workflow Git](../development/git-workflow.md#protections)) : la fusion est techniquement impossible tant qu'ils sont rouges (critère de la Definition of Done du Bloc 2).
 
-Même démarche pour le frontend, avec le scanner adapté et la couverture au format LCOV _(à venir)_.
+Même démarche pour le frontend (dépôt `grand-cinema-frontend`) : action `SonarSource/sonarqube-scan-action` épinglée sur un commit, réglages dans `sonar-project.properties`, couverture LCOV produite par Vitest, branche principale `dev`, analyse automatique désactivée, mêmes contrôles obligatoires dans les rulesets. Première analyse (27/10/2026) : 0 problème, notes A, 98,4 % de couverture.
 
 ## Quality gate
 
@@ -94,7 +94,7 @@ Chaque correction issue d'une analyse est consignée ci-dessous (règle, fichier
 | 4 | CA1861 : tableau constant passé en argument (maintenabilité, moyenne) | 4 tests : `RegisterUserHandlerTests`, `GetMoviesShowingHandlerTests`, `GetScheduleHandlerTests`, `MovieReadRepositoryTests` | la règle demande un champ `static readonly` pour ne pas recréer le tableau à chaque appel | **Désactivé pour les tests seulement** (`.editorconfig`, section `[tests/**.cs]`) : dans un test, exécuté une fois, le gain est nul, et un champ éloignerait la valeur attendue de l'assertion. Le code de production reste soumis à la règle | `fix/sonarcloud-first-report` |
 | 5 | Avertissement : dictionnaire de données PL/SQL non configuré | `docs/database/*.sql` | scripts PostgreSQL analysés avec les règles d'Oracle | **Exclus de l'analyse** (`**/*.sql`) : scripts de données de démonstration, vérifiés à chaque chargement (`ON_ERROR_STOP`) | `fix/sonarcloud-first-report` |
 
-Couverture : 72,3 % sur tout le code, sous l'objectif de 80 % de la stratégie de tests, qui porte sur le code métier (domaine et cas d'usage). Les endpoints HTTP n'ont pas encore de tests d'API (`WebApplicationFactory`, prévus en phase 7) : à analyser fichier par fichier, puis à combler ou à justifier _(à venir)_.
+Couverture : 72,3 % sur tout le code, sous l'objectif de 80 % de la stratégie de tests, qui porte sur le code métier (domaine et cas d'usage). Les endpoints HTTP n'avaient pas encore de tests d'API : comblé le 28/10/2026 (voir « Tests de l'API »).
 
 ### Pull Request du déploiement continu (25/10/2026)
 
@@ -104,6 +104,15 @@ SonarCloud analyse aussi les workflows GitHub Actions. Sur la Pull Request `chor
 |---|---|---|---|---|---|
 | 6 | Sécurité : épingler une dépendance sur l'empreinte complète d'un commit (échec) | `.github/workflows/deploy.yml`, `docker/login-action` et `aws-actions/configure-aws-credentials` | une étiquette comme `@v3` est mobile : déplacée vers un autre code par son propriétaire ou par un attaquant ayant pris son dépôt, elle s'exécuterait avec les permissions du job (publication d'images, accès AWS) | **Corrigé** : actions tierces épinglées sur l'empreinte du commit, version en commentaire (`@81c6f93… # v4.7.0`) ; Dependabot met à jour l'empreinte et le commentaire | `chore/continuous-deployment` |
 | 7 | Sécurité : permission d'écriture déclarée pour tout le workflow (avertissement, 2 occurrences) | `.github/workflows/deploy.yml`, `id-token: write` et `packages: write` | le job de tests recevait des droits dont il n'a pas besoin | **Corrigé** : `permissions: {}` pour le workflow, droits déclarés par job (moindre privilège) ; la dernière étape passe aussi l'adresse de l'API par `env:` plutôt que par une expression dans le script (injection de script) | `chore/continuous-deployment` |
+
+### Pull Request de publication du script TMDB
+
+Le script qui récupère les affiches, dates de sortie et durées sur TMDB (`scripts/fetch-tmdb-posters.mjs`, Node) était conservé hors du dépôt ; il a été publié, puisqu'il ne contient aucun secret (le jeton est lu dans `.env`, ignoré par Git). Le Quality Gate a bloqué la fusion jusqu'aux deux corrections.
+
+| # | Règle | Fichier | Problème | Décision et correction | Pull Request |
+|---|---|---|---|---|---|
+| 8 | Couverture du nouveau code inférieure à 80 % (Quality Gate) | `scripts/fetch-tmdb-posters.mjs` | 0 % : script d'outillage, lancé à la main une fois par jeu de données, sans test | **Exclu de la couverture** (`scripts/**` dans `sonar.coverage.exclusions`) : il ne fait pas partie de l'application livrée et son résultat (`seed-posters.sql`, 125 films sur 125) est vérifié à chaque chargement ; il reste analysé pour ses problèmes | publication du script TMDB |
+| 9 | Expression régulière exposée à un temps d'exécution excessif (retour arrière) | `scripts/fetch-tmdb-posters.mjs`, lecture des lignes `-- tmdb:` | une seule expression avec plusieurs parties variables peut essayer un très grand nombre de découpages sur une ligne mal formée | **Corrigé** : lecture réécrite en étapes simples (`parseMovieLine` : repérer la balise, puis l'année entre parenthèses), vérifiée sur les mêmes 125 résultats | publication du script TMDB |
 
 ### Couverture du code métier (25/10/2026)
 
@@ -116,7 +125,24 @@ Branche `test/business-code-coverage`. Mesure par couche avec ReportGenerator, a
 | `Error.Forbidden` supprimée (méthode, valeur `ErrorType.Forbidden` et traduction en 403) | jamais appelée : un test sur du code mort ne prouve rien ; le 403 vient de l'autorisation d'ASP.NET Core |
 | Dossier `Features/Movies/DTOS` renommé `DTOs` dans Git | homogène avec les autres fonctionnalités ; Windows ne voit pas la différence de casse, Linux (CI, serveur) oui |
 
-La couche API n'a pas encore de tests : SonarCloud la compte dans le total, d'où un chiffre global inférieur à celui du code métier. Tests d'API (`WebApplicationFactory`) _(à venir, avant l'US 2.2)_.
+La couche API n'avait pas encore de tests : SonarCloud la comptait dans le total, d'où un chiffre global inférieur à celui du code métier. Comblé le 28/10/2026 (ci-dessous).
+
+### Tests de l'API (28/10/2026)
+
+Branches `test/api-endpoints` (15 tests d'API, `WebApplicationFactory` et Testcontainers, détail dans la [stratégie de tests](testing-strategy.md#mesure-du-28102026)) puis `test/serializable-theory-data`. Aucun code de production modifié.
+
+| Mesure (tout le code, branche `dev`) | Avant | Après |
+|---|---|---|
+| Couverture | 77,6 % | **97,2 %** |
+| Problèmes | 1 (maintenabilité) | 0 |
+| Notes de sécurité, fiabilité, maintenabilité | A | A |
+| Points sensibles de sécurité | 0 | 0 |
+
+| # | Règle | Fichier | Problème | Décision et correction | Pull Request |
+|---|---|---|---|---|---|
+| 10 | xUnit1045 : donnée de théorie non sérialisable (maintenabilité, moyenne) | `tests/GrandCinema.Application.Tests/Features/Auth/Commands/RegisterUserHandlerTests.cs` | la théorie recevait un `RegisterUserCommand` : ses 5 cas s'exécutaient, mais le Test Explorer les affichait comme un seul test | **Corrigé** : la théorie reçoit des chaînes (`TheoryData<string, string, string, string, string>`) et construit la commande dans le test ; 5 cas listés séparément | `test/serializable-theory-data` |
+
+La Pull Request des tests d'API affichait « 0,0 % Coverage on New Code » avec un Quality Gate vert : elle n'ajoute que du code de tests, qui n'est pas lui-même mesuré ; il n'y a donc aucune ligne nouvelle à couvrir. Pour une comparaison locale, ReportGenerator exclut aussi le code généré sous `obj/`, que SonarCloud n'analyse pas.
 
 ## Autres contrôles
 

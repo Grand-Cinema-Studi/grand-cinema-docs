@@ -18,9 +18,9 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 |---|---|---|---|
 | Unitaire | un handler ou une règle métier, isolé : dépendances simulées, aucune base | xUnit, Moq, Shouldly, `FakeTimeProvider` | Fait : 43 tests (US 1.1 : 9 ; US 2.1 : 34) |
 | Intégration (accès aux données) | un repository contre un vrai PostgreSQL, avec les vraies migrations | xUnit, Testcontainers (PostgreSQL 16 jetable) | Fait : 4 tests (US 1.1 : 2 ; US 2.1 : 2) |
-| Intégration (API) | un endpoint de bout en bout dans l'API : routage, sérialisation, codes HTTP, base réelle | `WebApplicationFactory`, Testcontainers | _(à venir)_ |
+| Intégration (API) | un endpoint de bout en bout dans l'API : routage, sérialisation, codes HTTP, Problem Details, authentification, limitation des tentatives, base réelle | `WebApplicationFactory`, Testcontainers | Fait : 15 tests (US 1.1 : 3 ; US 2.1 : 10 ; `/health` et document OpenAPI : 2) |
 | Concurrence | deux requêtes simultanées sur la dernière place : une seule réussit | Testcontainers, tâches parallèles | _(à venir, US 2.3)_ — voir [bug 0001](bugs/0001-double-booking.md) |
-| Composants front | un composant Angular isolé | outils de test d'Angular CLI | _(à venir)_ |
+| Composants front | un composant ou un service Angular isolé : réseau remplacé par `HttpTestingController`, service remplacé par une doublure | Vitest (jsdom), outils de test d'Angular | Fait : 46 tests (dépôt `grand-cinema-frontend`) |
 | Système / bout en bout | le parcours complet dans un navigateur : consulter, réserver, payer en mode test, recevoir le billet, le scanner | Selenium (Bloc 2), automatisé sur la recette, limité aux parcours critiques | _(à venir, avec le front)_ |
 | Performance / charge | la tenue des pics du festival : 200 utilisateurs simultanés sur une séance, 95 % des requêtes en moins de 2 s, zéro double vente | JMeter | en préproduction, avant chaque mise en production et avant le festival _(à venir ; préproduction non montée pour le projet)_ |
 | Sécurité | failles courantes (injection SQL, XSS, CSRF, force brute, QR code falsifié ou réutilisé), dépendances vulnérables | SonarCloud et Dependabot à chaque Pull Request ; scan OWASP ZAP en préproduction, à chaque release | SonarCloud et Dependabot : fait (25/10/2026) ; OWASP ZAP _(à venir)_ |
@@ -38,6 +38,7 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 - Le temps est simulé (`FakeTimeProvider`) : un test sur « aujourd'hui » ou sur l'expiration à 10 minutes s'exécute en quelques millisecondes, et donne le même résultat à toute heure.
 - Les tests d'intégration démarrent leur propre PostgreSQL dans un conteneur jetable, y appliquent les migrations, puis le détruisent : ils ne dépendent ni de la base de développement, ni de l'ordre d'exécution.
 - Un test qui passe au vert dès son écriture est cassé volontairement (en retirant le code qu'il vérifie) pour s'assurer qu'il sait échouer, puis le code est rétabli.
+- Tests d'API : la vraie API démarre en mémoire (`WebApplicationFactory`, environnement `Testing`) sur un PostgreSQL jetable partagé par tous les tests d'API ; chaque test crée ses propres données (adresse, salle et film au nom unique) et n'affirme que sur elles. Les réponses sont lues en JSON brut, avec les noms que reçoit le front, et non désérialisées dans les DTO de l'API : renommer une propriété casse le test comme elle casserait le front. Chaque client simule un visiteur distinct (`X-Forwarded-For`), comme derrière CloudFront.
 
 ## Commandes
 
@@ -45,6 +46,7 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 dotnet test                                        # tous les tests (Docker doit tourner)
 dotnet test --filter "Category!=Integration"       # tests unitaires seuls
 dotnet test --filter "US=1.1"                      # tests d'une user story
+dotnet test tests/GrandCinema.Api.Tests           # tests d'API seuls (Docker doit tourner)
 dotnet test --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults   # avec mesure de la couverture
 ```
 
@@ -62,6 +64,8 @@ Les Pull Requests fusionnées en merge commit conservent ces commits (voir le [w
 
 Exception assumée : pour l'US 2.1, le code et les tests ont été écrits ensemble, en un seul passage (journal du backend, étape 12). Chaque test a été cassé volontairement pour vérifier qu'il sait échouer. Le cycle rouge, vert, refactor commit par commit reprend à partir de l'US 2.2.
 
+Les 15 tests d'API ont été écrits après les endpoints qu'ils vérifient : ce sont des tests de contrat. Chacun a été vu rouge en sabotant le code qu'il protège (paramètre `date` ignoré, adresse du compte créé, conflit traduit en `400`, profil ouvert à tous, signature du jeton jamais vérifiée, `UseForwardedHeaders` retiré, adresse de serveur dans le document OpenAPI), puis le sabotage a été annulé. À partir de l'US 2.2, le test d'API d'un endpoint est écrit avant lui.
+
 ## Couverture de code
 
 - Mesurée par **Coverlet** (`coverlet.collector`, dans les projets de tests). Les réglages sont dans **`coverlet.runsettings`**, à la racine du dépôt backend, lu à l'identique par les postes et par l'intégration continue : les chiffres sont les mêmes partout.
@@ -75,13 +79,14 @@ Exception assumée : pour l'US 2.1, le code et les tests ont été écrits ensem
   dotnet test --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
   reportgenerator -reports:"TestResults/**/coverage.cobertura.xml" -targetdir:"TestResults/coverage-report" \
     -reporttypes:"TextSummary;Html" \
-    -filefilters:"-**/Program.cs;-**/Migrations/**;-**/Persistence/Configurations/**;-**/DependencyInjection.cs"
+    -filefilters:"-**/Program.cs;-**/Migrations/**;-**/Persistence/Configurations/**;-**/DependencyInjection.cs;-**/obj/**"
   cat TestResults/coverage-report/Summary.txt     # TestResults/ est ignoré par Git
   ```
 
 - Envoyée à SonarCloud à chaque analyse, voir [qualité du code](code-quality.md).
 - **Objectif : au moins 80 % sur le code métier** (domaine et cas d'usage), comme fixé au Bloc 2. Le chiffre n'est pas une fin en soi : un pourcentage élevé prouve que le code a été exécuté, pas que les assertions vérifient les bons résultats. Ce qui compte, c'est que chaque règle et ses cas limites soient testés, et que chaque test ait été vu échouer.
 - Le code sans logique (configuration EF Core, `Program.cs`, enregistrement des dépendances, migrations générées) n'est pas compté (paramètre `sonar.coverage.exclusions`, et `-filefilters` de ReportGenerator).
+- Le code produit à la compilation par les générateurs de source d'ASP.NET Core (fichiers sous `obj/`, par exemple `Microsoft.AspNetCore.OpenApi.Generated`) n'est pas compté non plus (`-**/obj/**`) : SonarCloud ne l'analyse pas, et le compter faisait tomber la couche API de 99,3 % à 55,5 % sans qu'aucune ligne écrite à la main ne soit en cause.
 
 ### Mesure du 25/10/2026
 
@@ -102,7 +107,20 @@ Démarche suivie pour y arriver, à partir de 87,7 % (et 51 % sur le domaine, d�
    - configuration JWT : valeur manquante nommée dans l'erreur, clé de signature de 31 octets refusée et de 32 acceptée, durée de 60 minutes par défaut.
 4. Code mort supprimé plutôt que testé : `Error.Forbidden`, jamais appelée (le refus 403 d'un utilisateur sans le bon rôle vient de l'autorisation d'ASP.NET Core, avant le handler).
 
-Reste : la couche API (endpoints) n'a pas encore de tests. Elle n'entre pas dans l'objectif du code métier, mais SonarCloud la compte dans le total, et le Quality Gate exige 80 % sur le **nouveau code** de chaque Pull Request : des tests d'API (`WebApplicationFactory`) sont donc nécessaires avant la prochaine story qui ajoute un endpoint (US 2.2) _(à venir)_.
+Reste alors : la couche API, sans tests ; comblé le 28/10/2026 (ci-dessous).
+
+### Mesure du 28/10/2026
+
+Après les tests d'API (journal du backend, étape 13) :
+
+| Couche | Lignes | Lecture |
+|---|---|---|
+| API (`GrandCinema.Api`) | **99,3 %** | absente des mesures précédentes (aucun test ne la chargeait) ; toutes les classes à 100 % sauf `ErrorMappings` (93,7 %) : la traduction d'une erreur inconnue en `500`, qu'aucun cas métier ne produit |
+| Cas d'usage (`GrandCinema.Application`) | **100 %** | inchangé |
+| Infrastructure | 96,1 % | inchangé (`GrandCinemaDbContext`, voir ci-dessus) |
+| **Total mesuré** | **98,8 % des lignes**, 90,1 % des branches (64 sur 71) | 62 tests : 43 unitaires, 4 d'intégration, 15 d'API |
+
+Le taux de branches baisse parce que celles de l'API sont désormais comptées. **SonarCloud, branche `dev` : 97,2 %** sur tout le code (77,6 % avant), 0 problème, notes A.
 
 ## Environnements de test
 
