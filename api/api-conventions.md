@@ -15,9 +15,11 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 | Méthode | Route | Accès | Rôle | User story |
 |---|---|---|---|---|
 | `GET` | `/api/schedule?date=AAAA-MM-JJ` | public | films et séances d'un jour (aujourd'hui si la date est omise) ; films triés par titre, séances par heure | 1.1 |
-| `POST` | `/api/users` | public, limité à 10 appels par minute et par IP | création d'un compte spectateur ; `201` avec un jeton d'accès, `409` si l'adresse est déjà utilisée | 2.1 |
+| `GET` | `/api/movies` | public | films à l'affiche (au moins une séance à venir), triés par titre | 1.1 |
+| `POST` | `/api/users` | public, limité à 10 appels par minute et par IP | création d'un compte spectateur ; `acceptPrivacyPolicy: true` obligatoire (sinon `400`, champ `acceptPrivacyPolicy`), date et version de la politique enregistrées ; `201` avec un jeton d'accès, `409` si l'adresse est déjà utilisée | 2.1 |
 | `POST` | `/api/tokens` | public, limité à 10 appels par minute et par IP | connexion ; `200` avec un jeton d'accès, `401` sans dire quelle donnée est fausse | 2.1 |
 | `GET` | `/api/users/me` | connecté | profil de l'utilisateur identifié par le jeton | 2.1 |
+| `DELETE` | `/api/users/me` | connecté | suppression du compte identifié par le jeton (droit à l'effacement) ; `204`, `404` si le compte n'existe plus ; réservations gardées, sans lien avec le compte | 2.1 |
 | `GET` | `/health` | public | état de l'application, pour la supervision et le script de déploiement | — |
 | `GET` | `/` | public | nom de l'API, pour un humain qui ouvre son adresse | — |
 
@@ -72,7 +74,7 @@ Exemple, `GET /api/schedule?date=2026-07-18` :
 |---|---|---|
 | `200 OK` | lecture ou action réussie, avec un contenu | programmation du jour, éventuellement vide |
 | `201 Created` | ressource créée ; l'en-tête `Location` donne son adresse | places bloquées pour une réservation _(US 2.3)_ |
-| `204 No Content` | action réussie, sans contenu à renvoyer | suppression d'une séance _(US 5.2)_ |
+| `204 No Content` | action réussie, sans contenu à renvoyer | suppression de son compte (`DELETE /api/users/me`) |
 | `400 Bad Request` | requête mal formée ou données invalides | date au mauvais format, nombre de places nul |
 | `401 Unauthorized` | authentification absente ou invalide | réserver sans être connecté _(US 2.1)_ |
 | `403 Forbidden` | connecté, mais rôle insuffisant | un spectateur qui modifie la programmation |
@@ -103,7 +105,7 @@ Toutes les erreurs suivent le format standard **Problem Details** ([RFC 9457](ht
 
 ## Authentification
 
-Les endpoints publics (programmation, places restantes, inscription, connexion) ne demandent rien. Les autres exigent un utilisateur connecté, et selon le cas un rôle : le front envoie le jeton reçu à l'inscription ou à la connexion dans l'en-tête `Authorization: Bearer <jeton>`. Sans jeton valide, la réponse est `401` ; avec un rôle insuffisant, `403`. Mécanisme et règles : [sécurité](../security/security.md#authentification-et-rôles).
+Les endpoints publics (programmation, films à l'affiche, places restantes, inscription, connexion) ne demandent rien. Les autres exigent un utilisateur connecté, et selon le cas un rôle : le front envoie le jeton reçu à l'inscription ou à la connexion dans l'en-tête `Authorization: Bearer <jeton>`. Sans jeton valide, la réponse est `401` ; avec un rôle insuffisant, `403`. Mécanisme et règles : [sécurité](../security/security.md#authentification-et-rôles).
 
 ## Faire évoluer le contrat
 

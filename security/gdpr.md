@@ -20,6 +20,7 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés. 
 | Adresse e-mail, prénom, nom | table `Users` | créer le compte, se connecter, retrouver ses billets | exécution du contrat |
 | Empreinte du mot de passe | table `Users` | authentification ; le mot de passe lui-même n'est jamais stocké | exécution du contrat |
 | Rôle, date de création du compte | table `Users` | droits d'accès, gestion des comptes | exécution du contrat |
+| Date et version de la politique de confidentialité acceptée à l'inscription | table `Users` (`PrivacyPolicyAcceptedAt`, `PrivacyPolicyVersion`) | prouver que la personne a été informée (article 13, principe de responsabilité) | obligation légale |
 | Réservations : séance, places, montant, statut, dates | tables `Reservations`, `ReservedSeats` | vendre et contrôler les billets | exécution du contrat |
 | Identifiant du paiement chez Stripe _(à venir)_ | table `Reservations` | rapprocher une réservation de son paiement | exécution du contrat, obligation comptable |
 | Statistiques de fréquentation | calculées à partir des réservations | programmer les séances, anticiper les pics | intérêt légitime ; données agrégées, sans profil individuel |
@@ -35,17 +36,17 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés. 
 | Blocages expirés ou annulés | les places sont libérées immédiatement ; la réservation reste avec son statut pour l'historique | anonymisée avec le compte |
 | Journaux techniques | quelques semaines | suppression automatique |
 
-À la suppression d'un compte, ses réservations ne sont pas effacées (obligation comptable, statistiques) mais **anonymisées** : elles ne sont plus rattachées à une personne identifiable.
+À la suppression d'un compte, ses réservations ne sont pas effacées (obligation comptable, statistiques) mais **anonymisées** : elles ne sont plus rattachées à une personne identifiable. C'est la base qui le garantit : la clé étrangère `Reservations.UserId` est en `ON DELETE SET NULL` (migration `DetachReservationsOfDeletedAccounts`), vérifiée par un test d'intégration sur PostgreSQL.
 
-## Droits des personnes _(à venir)_
+## Droits des personnes
 
 | Droit | Mise en œuvre |
 |---|---|
-| Information | page « Données personnelles » dans le front, accessible depuis la création de compte |
-| Accès, portabilité | export des données du compte et des réservations, depuis l'espace personnel ou sur demande |
-| Rectification | modification du nom et de l'adresse e-mail depuis l'espace personnel |
-| Effacement | suppression du compte depuis l'espace personnel (avec anonymisation des réservations) |
-| Contact | adresse de contact du cinéma, indiquée sur la page « Données personnelles » |
+| Information | page « Données personnelles » dans le front, accessible par un lien à côté de la case à cocher de l'inscription _(front à venir)_. L'API refuse l'inscription sans `acceptPrivacyPolicy: true` et enregistre la date et la version acceptées (fait côté API, 28/10/2026). La case atteste l'information ; la base légale du compte reste l'exécution du contrat |
+| Accès, portabilité | profil consultable (`GET /api/users/me`) ; export des données du compte et des réservations, sur demande _(à venir)_ |
+| Rectification | modification du nom et de l'adresse e-mail depuis l'espace personnel _(à venir)_ |
+| Effacement | `DELETE /api/users/me` : suppression du compte, réservations gardées et détachées (fait côté API, 28/10/2026) ; bouton dans l'espace personnel, avec confirmation _(front à venir)_ |
+| Contact | adresse de contact du cinéma, indiquée sur la page « Données personnelles » _(à venir)_ |
 
 ## Cookies et traceurs
 
