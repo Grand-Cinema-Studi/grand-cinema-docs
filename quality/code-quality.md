@@ -6,7 +6,7 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 
 ## Outil retenu : SonarCloud
 
-SonarCloud (désormais « SonarQube Cloud ») est la version hébergée de SonarQube (outil cité dans la stratégie de tests du Bloc 2). En place sur le backend depuis le 25/10/2026 ; frontend _(à venir)_.
+SonarCloud (désormais « SonarQube Cloud ») est la version hébergée de SonarQube (outil cité dans la stratégie de tests du Bloc 2). En place sur le backend depuis le 25/10/2026 et sur le frontend depuis le 27/10/2026.
 
 | Critère | Pourquoi SonarCloud |
 |---|---|
@@ -17,6 +17,8 @@ SonarCloud (désormais « SonarQube Cloud ») est la version hébergée de Sonar
 | Installation | aucun serveur à héberger, contrairement à SonarQube |
 
 ## Branchement
+
+### Backend
 
 L'analyse automatique de SonarCloud ne prend pas en charge le C# : elle est désactivée, et l'analyse est lancée par l'intégration continue (GitHub Actions, `.github/workflows/ci.yml`, job `build-and-test`), avec le scanner .NET.
 
@@ -47,7 +49,38 @@ L'analyse automatique de SonarCloud ne prend pas en charge le C# : elle est dés
 5. **Branche principale SonarCloud : `dev`.** Le plan Free n'analyse que la branche principale et les Pull Requests ; le premier push sur `dev` échouait (« Organization is not allowed to access data from non main branches »). `dev` étant la branche d'intégration et celle déployée en recette, c'est elle qui sert de référence au nouveau code ; les Pull Requests vers `main` restent analysées.
 6. Contrôles `build-and-test` et « SonarCloud Code Analysis » obligatoires dans le ruleset `protect-main-and-dev` (voir le [workflow Git](../development/git-workflow.md#protections)) : la fusion est techniquement impossible tant qu'ils sont rouges (critère de la Definition of Done du Bloc 2).
 
-Même démarche pour le frontend (dépôt `grand-cinema-frontend`) : action `SonarSource/sonarqube-scan-action` épinglée sur un commit, réglages dans `sonar-project.properties`, couverture LCOV produite par Vitest, branche principale `dev`, analyse automatique désactivée, mêmes contrôles obligatoires dans les rulesets. Première analyse (27/10/2026) : 0 problème, notes A, 98,4 % de couverture.
+### Frontend
+
+Même démarche que pour le backend, avec les outils du monde JavaScript. Les pièges rencontrés côté backend (branche principale, analyse automatique, actions non épinglées) ont été évités d'emblée.
+
+1. Projet `Grand-Cinema-Studi_grand-cinema-frontend` dans la même organisation SonarCloud ; analyse automatique désactivée (elle ne lit pas la couverture, et ferait échouer l'analyse de la CI) ; jeton dans le secret `SONAR_TOKEN` du dépôt du front (chaque dépôt a ses propres secrets).
+2. Réglages dans `sonar-project.properties`, à la racine du dépôt :
+
+   | Réglage | Valeur | Pourquoi |
+   |---|---|---|
+   | `sonar.sources` / `sonar.exclusions` | `src`, sans `**/*.spec.ts` | le code de l'application est analysé comme du code de production |
+   | `sonar.tests` / `sonar.test.inclusions` | `src`, `**/*.spec.ts` | les tests, rangés à côté du code testé, sont reconnus comme des tests et ne comptent pas dans la couverture |
+   | `sonar.javascript.lcov.reportPaths` | `coverage/grand-cinema-frontend/lcov.info` | couverture produite par Vitest (`npm run test:ci`, fournisseur V8, format LCOV) |
+   | `sonar.coverage.exclusions` | `src/main.ts`, `src/app/app.config.ts`, `**/*.routes.ts` | code sans logique : démarrage, déclaration des providers et des routes |
+   | `sonar.qualitygate.wait` | `true` | l'étape échoue quand le Quality Gate est rouge |
+
+3. Ordre des étapes du job `build-and-test` (`.github/workflows/ci.yml`) :
+
+   ```bash
+   npm ci
+   npm run lint            # ESLint : TypeScript et templates, dont les règles d'accessibilité d'angular-eslint
+   npm run format:check    # Prettier, classes Tailwind triées
+   npm run test:ci         # Vitest une seule fois, avec la couverture LCOV
+   npm run build           # compilation de production
+   # puis SonarSource/sonarqube-scan-action, épinglée sur l'empreinte de son commit (# v8.3.0)
+   ```
+
+   - `fetch-depth: 0` sur `actions/checkout` : SonarCloud compare avec l'historique pour repérer le nouveau code.
+   - `permissions: contents: read` pour tout le workflow : le job ne fait que lire le code.
+   - `concurrency` : un nouveau commit sur la même branche annule l'analyse en cours.
+4. Déclenchement : chaque Pull Request vers `dev` ou `main`, et chaque push sur `dev`.
+5. **Branche principale SonarCloud : `dev`**, réglée avant le premier push (même raison que pour le backend).
+6. Contrôles `build-and-test` et « SonarCloud Code Analysis » obligatoires dans le ruleset `protect-main-and-dev` du dépôt du front (créé le 27/10/2026).
 
 ## Quality gate
 
@@ -74,7 +107,7 @@ Chaque correction issue d'une analyse est consignée ci-dessous (règle, fichier
 
 ## Journal des analyses
 
-### Première analyse complète de `dev` (25/10/2026)
+### Backend : première analyse complète de `dev` (25/10/2026)
 
 | Mesure (tout le code) | Avant | Après correction |
 |---|---|---|
@@ -96,7 +129,7 @@ Chaque correction issue d'une analyse est consignée ci-dessous (règle, fichier
 
 Couverture : 72,3 % sur tout le code, sous l'objectif de 80 % de la stratégie de tests, qui porte sur le code métier (domaine et cas d'usage). Les endpoints HTTP n'avaient pas encore de tests d'API : comblé le 28/10/2026 (voir « Tests de l'API »).
 
-### Pull Request du déploiement continu (25/10/2026)
+### Backend : Pull Request du déploiement continu (25/10/2026)
 
 SonarCloud analyse aussi les workflows GitHub Actions. Sur la Pull Request `chore/continuous-deployment`, le Quality Gate a échoué (« C Security Rating on New Code ») : la fusion a été bloquée jusqu'à la correction.
 
@@ -105,7 +138,7 @@ SonarCloud analyse aussi les workflows GitHub Actions. Sur la Pull Request `chor
 | 6 | Sécurité : épingler une dépendance sur l'empreinte complète d'un commit (échec) | `.github/workflows/deploy.yml`, `docker/login-action` et `aws-actions/configure-aws-credentials` | une étiquette comme `@v3` est mobile : déplacée vers un autre code par son propriétaire ou par un attaquant ayant pris son dépôt, elle s'exécuterait avec les permissions du job (publication d'images, accès AWS) | **Corrigé** : actions tierces épinglées sur l'empreinte du commit, version en commentaire (`@81c6f93… # v4.7.0`) ; Dependabot met à jour l'empreinte et le commentaire | `chore/continuous-deployment` |
 | 7 | Sécurité : permission d'écriture déclarée pour tout le workflow (avertissement, 2 occurrences) | `.github/workflows/deploy.yml`, `id-token: write` et `packages: write` | le job de tests recevait des droits dont il n'a pas besoin | **Corrigé** : `permissions: {}` pour le workflow, droits déclarés par job (moindre privilège) ; la dernière étape passe aussi l'adresse de l'API par `env:` plutôt que par une expression dans le script (injection de script) | `chore/continuous-deployment` |
 
-### Pull Request de publication du script TMDB
+### Backend : Pull Request de publication du script TMDB
 
 Le script qui récupère les affiches, dates de sortie et durées sur TMDB (`scripts/fetch-tmdb-posters.mjs`, Node) était conservé hors du dépôt ; il a été publié, puisqu'il ne contient aucun secret (le jeton est lu dans `.env`, ignoré par Git). Le Quality Gate a bloqué la fusion jusqu'aux deux corrections.
 
@@ -114,7 +147,7 @@ Le script qui récupère les affiches, dates de sortie et durées sur TMDB (`scr
 | 8 | Couverture du nouveau code inférieure à 80 % (Quality Gate) | `scripts/fetch-tmdb-posters.mjs` | 0 % : script d'outillage, lancé à la main une fois par jeu de données, sans test | **Exclu de la couverture** (`scripts/**` dans `sonar.coverage.exclusions`) : il ne fait pas partie de l'application livrée et son résultat (`seed-posters.sql`, 125 films sur 125) est vérifié à chaque chargement ; il reste analysé pour ses problèmes | publication du script TMDB |
 | 9 | Expression régulière exposée à un temps d'exécution excessif (retour arrière) | `scripts/fetch-tmdb-posters.mjs`, lecture des lignes `-- tmdb:` | une seule expression avec plusieurs parties variables peut essayer un très grand nombre de découpages sur une ligne mal formée | **Corrigé** : lecture réécrite en étapes simples (`parseMovieLine` : repérer la balise, puis l'année entre parenthèses), vérifiée sur les mêmes 125 résultats | publication du script TMDB |
 
-### Couverture du code métier (25/10/2026)
+### Backend : couverture du code métier (25/10/2026)
 
 Branche `test/business-code-coverage`. Mesure par couche avec ReportGenerator, avec les exclusions de SonarCloud : 87,7 % au départ (domaine 51 %, uniquement des propriétés), **98,5 % des lignes et 97,7 % des branches** à l'arrivée ; cas d'usage à **100 %**. Détail de la démarche dans la [stratégie de tests](testing-strategy.md#mesure-du-25102026).
 
@@ -127,7 +160,7 @@ Branche `test/business-code-coverage`. Mesure par couche avec ReportGenerator, a
 
 La couche API n'avait pas encore de tests : SonarCloud la comptait dans le total, d'où un chiffre global inférieur à celui du code métier. Comblé le 28/10/2026 (ci-dessous).
 
-### Tests de l'API (28/10/2026)
+### Backend : tests de l'API (28/10/2026)
 
 Branches `test/api-endpoints` (15 tests d'API, `WebApplicationFactory` et Testcontainers, détail dans la [stratégie de tests](testing-strategy.md#mesure-du-28102026)) puis `test/serializable-theory-data`. Aucun code de production modifié.
 
@@ -144,6 +177,28 @@ Branches `test/api-endpoints` (15 tests d'API, `WebApplicationFactory` et Testco
 
 La Pull Request des tests d'API affichait « 0,0 % Coverage on New Code » avec un Quality Gate vert : elle n'ajoute que du code de tests, qui n'est pas lui-même mesuré ; il n'y a donc aucune ligne nouvelle à couvrir. Pour une comparaison locale, ReportGenerator exclut aussi le code généré sous `obj/`, que SonarCloud n'analyse pas.
 
+### Frontend : première analyse de `dev` (27/10/2026)
+
+Pull Request `chore/sonarcloud`, après les écrans de l'US 1.1 (programmation, films à l'affiche).
+
+| Mesure (tout le code, branche `dev`) | Résultat |
+|---|---|
+| Quality Gate | passé |
+| Problèmes | 0 |
+| Notes de sécurité, fiabilité, maintenabilité | A |
+| Points sensibles de sécurité | 0 |
+| Duplication | 0,0 % |
+| Couverture | **98,4 %** (environ 1 100 lignes de code) |
+
+Mesure locale correspondante (`npm run test:ci`) : 46 tests, 98,8 % des lignes et 96,4 % des branches.
+
+Seul échec rencontré, hors SonarCloud : `npm run format:check` signalait tous les fichiers sur un poste Windows. Git les écrivait en CRLF sur le disque (`core.autocrlf=true`), alors que Prettier et `.editorconfig` attendent du LF ; la CI, sous Linux, ne voyait rien. **Corrigé** par un `.gitattributes` (`* text=auto eol=lf`) qui impose le LF à tous les postes, quel que soit leur réglage Git (`chore/sonarcloud`).
+
+### Frontend : déploiement continu et US 2.1 (27 et 28/10/2026)
+
+- Pull Request `chore/cd-recette` (workflow `deploy.yml`) : aucun problème relevé. Les règles apprises sur le workflow du backend (problèmes 6 et 7 ci-dessus) ont été appliquées dès l'écriture : action AWS épinglée sur l'empreinte de son commit, `permissions: {}` puis droits déclarés par job, valeurs passées par `env:`.
+- Pull Request `feature/us-2-1-account-screens` (session, intercepteur, garde, écrans de compte, politique de confidentialité) : Quality Gate passé ; 78 tests (32 de plus).
+
 ## Autres contrôles
 
 | Contrôle | Ce qu'il apporte | État |
@@ -153,3 +208,14 @@ La Pull Request des tests d'API affichait « 0,0 % Coverage on New Code » avec 
 | `dotnet format --verify-no-changes` | formatage identique sur tous les postes, vérifié par la CI à chaque Pull Request ; mise en forme initiale de tout le code dans un commit `style:` séparé | Fait (25/10/2026) |
 | `.editorconfig` | réglages des règles par dossier (CA1861 désactivée dans les tests, avec la raison) | Fait (25/10/2026) |
 | Dependabot | alerte, et propose une mise à jour, quand une dépendance (paquet NuGet, action GitHub, image Docker) a une faille connue ou une nouvelle version | Fait (25/10/2026) |
+
+Frontend :
+
+| Contrôle | Ce qu'il apporte | État |
+|---|---|---|
+| TypeScript 6 en mode strict | erreurs de type et risques de `null` détectés à la compilation | Fait (20/10/2026) |
+| ESLint (`angular-eslint`) | règles d'Angular et de TypeScript, et règles d'accessibilité des templates (`templateAccessibility`) ; vérifié par la CI | Fait (20/10/2026) |
+| Prettier (`format:check`) | formatage identique sur tous les postes, classes Tailwind triées ; vérifié par la CI | Fait (20/10/2026) |
+| `.gitattributes` (`eol=lf`) | mêmes fins de ligne sur Windows et sous Linux : `format:check` donne le même résultat partout | Fait (27/10/2026) |
+| Revue de chaque Pull Request | relecture du diff selon les [standards de code](../development/coding-standards.md#revue-de-code) | Fait |
+| Dependabot | mises à jour hebdomadaires des paquets npm et des actions GitHub, proposées vers `dev` | Fait (20/10/2026) |
