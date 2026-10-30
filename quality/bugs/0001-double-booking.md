@@ -1,6 +1,6 @@
 # Bug 0001 – Double réservation de la dernière place
 
-- Statut : identifié à la conception ; reproduction et correctif développés avec l'US 2.3 _(à venir)_
+- Statut : **corrigé le 30/10/2026**, avec l'US 2.3 (journal du backend, étape 17) ; vérifié sur la recette
 - Gravité : bloquante (double vente)
 - Concerne : backend, réservation (US 2.3)
 - Liens : [US 2.3](https://github.com/Grand-Cinema-Studi/grand-cinema-docs/issues/9), [schéma de la base](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/blob/dev/docs/database/erd.md)
@@ -33,7 +33,7 @@ Un test d'intégration, contre un vrai PostgreSQL (Testcontainers) :
 2. lancer deux demandes de blocage **en parallèle**, synchronisées pour qu'elles partent au même instant ;
 3. constater qu'avant correctif, les deux réussissent, et que la séance compte plus de places bloquées que sa salle n'en a.
 
-Nom prévu : `When_two_users_book_the_last_seat_at_the_same_time_Then_only_one_succeeds`, étiqueté `US=2.3` et `Category=Integration`. Il reprend le critère d'acceptation de l'US 2.3 : « Quand deux utilisateurs visent la dernière place, alors un seul obtient le blocage ; l'autre reçoit un message explicite. »
+Test écrit : `When_two_users_book_the_last_seat_at_the_same_time_Then_only_one_succeeds` (`ReservationsEndpointsTests`, tests d'API), étiqueté `US=2.3` et `Category=Integration`. Il passe par l'API réelle (`WebApplicationFactory`) et un PostgreSQL jetable : deux clients connectés envoient leur demande en même temps (`Task.WhenAll`). Il reprend le critère d'acceptation de l'US 2.3 : « Quand deux utilisateurs visent la dernière place, alors un seul obtient le blocage ; l'autre reçoit un message explicite. »
 
 ## Correctif
 
@@ -56,13 +56,21 @@ Le refus est un résultat métier attendu, pas une erreur technique : l'API rép
 
 Pourquoi les deux : la contrainte garantit l'intégrité quoi qu'il arrive, mais ne permet pas de bien répondre à l'utilisateur ; la transaction permet de bien répondre, mais dépend du code. Redis n'est pas nécessaire : la base suffit au volume du cinéma (voir l'[architecture](../../architecture/overview.md#points-darchitecture-structurants)).
 
+## Ce qui a été fait
+
+- Les places sont **attribuées par le cinéma** (premières places libres, rangée après rangée) : le spectateur demande un nombre de places, le choix sur plan est l'US 2.4 (V2).
+- Le blocage se fait dans `ReservationRepository.TryHoldSeatsAsync`, en une transaction : verrou de la séance (`SELECT … FOR UPDATE`, requête paramétrée), libération des blocages expirés de la séance, choix des places libres, enregistrement. Une violation de l'index unique (`23505`) est traduite en refus, donc en `409 not-enough-seats`.
+- La réponse au perdant est `409`, type `/errors/not-enough-seats` (le front choisit son message d'après ce type).
+- Le test d'API de la dernière place ne suffit pas à prouver le verrou : sur une seule place, l'index unique refuse déjà le second. Un test d'intégration le prouve : **dix clients simultanés sur dix places** obtiennent dix places différentes ; sans le verrou (sabotage : `FOR UPDATE` retiré), plusieurs choisissent la même première place libre et sont refusés à tort.
+
 ## Validation
 
-- Le test de reproduction passe : une seule demande réussit, l'autre reçoit `409`.
-- Les tests de l'US 2.3 et des autres stories passent toujours (non-régression).
+- Le test de reproduction passe : une seule demande réussit, l'autre reçoit `409` (30/10/2026).
+- Les tests de l'US 2.3 et des autres stories passent toujours (non-régression) : 104 tests verts.
+- Sur la recette (30/10/2026) : blocage de 2 places (`201`), compteur de la séance de 300 à 298, puis retour à 300 et statut `Expired` au bout de 10 minutes ; `401` sans jeton, `400` pour 11 places.
 - Avant une mise en production réelle, un test de charge (JMeter, 200 utilisateurs simultanés sur une séance presque complète, prévu au Bloc 2) vérifie qu'aucune double vente n'apparaît sous charge.
 
-Traçabilité, à la fusion : issue `bug`, Pull Request, commits du test (rouge) et du correctif (vert).
+Traçabilité : issue `bug` fermée par la Pull Request de l'US 2.3 (`Fixes`), commits `test(us-2.3): red - …` puis `feat(us-2.3): green - …`.
 
 ## Autres bugs potentiels relevés
 
@@ -70,6 +78,6 @@ Moins graves, à traiter avec leur user story :
 
 | Risque | Conséquence | Traitement prévu |
 |---|---|---|
-| Un blocage expiré n'est pas libéré (paiement abandonné) | des places restent indisponibles alors que personne ne les a payées | libération à l'expiration des 10 minutes, testée avec une horloge simulée (US 2.3) |
+| Un blocage expiré n'est pas libéré (paiement abandonné) | des places restent indisponibles alors que personne ne les a payées | **traité (US 2.3)** : le comptage ignore les blocages expirés (US 2.2) ; au blocage suivant de la séance, sous le verrou, ils passent à `Expired` et leurs places sont libérées ; testé avec une horloge simulée et contre PostgreSQL |
 | « Aujourd'hui » calculé dans le fuseau du serveur (souvent UTC) | entre minuit et 1 h ou 2 h (selon la saison), la programmation affichée est celle de la veille | heure de Paris imposée (`TZ=Europe/Paris` en production) et test du passage de minuit |
 | Tri des titres selon la langue du serveur | « Élise » peut être classé après « Zorro » sur un serveur en anglais | comparaison explicite en français |
