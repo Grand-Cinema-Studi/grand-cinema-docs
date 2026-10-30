@@ -16,6 +16,7 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 |---|---|---|---|---|
 | `GET` | `/api/schedule?date=AAAA-MM-JJ` | public | films et séances d'un jour (aujourd'hui si la date est omise, toute date future acceptée) ; films triés par titre, séances par heure ; places restantes de chaque séance (`remainingSeats`) | 1.1, 2.2 |
 | `GET` | `/api/movies` | public | films à l'affiche (au moins une séance à venir), triés par titre | 1.1 |
+| `GET` | `/api/movies/{id}` | public | fiche d'un film : toutes ses séances à venir, sans limite de date (réservation jusqu'à un an à l'avance), regroupées par jour et triées par heure, avec les places restantes ; `404` (`/errors/movie-not-found`) si le film n'existe pas | 1.1, 2.2 |
 | `POST` | `/api/users` | public, limité à 10 appels par minute et par IP | création d'un compte spectateur ; `acceptPrivacyPolicy: true` obligatoire (sinon `400`, champ `acceptPrivacyPolicy`), date et version de la politique enregistrées ; `201` avec un jeton d'accès, `409` si l'adresse est déjà utilisée | 2.1 |
 | `POST` | `/api/tokens` | public, limité à 10 appels par minute et par IP | connexion ; `200` avec un jeton d'accès, `401` sans dire quelle donnée est fausse | 2.1 |
 | `GET` | `/api/users/me` | connecté | profil de l'utilisateur identifié par le jeton | 2.1 |
@@ -70,6 +71,34 @@ Exemple, `GET /api/schedule?date=2026-07-18` :
 }
 ```
 
+Exemple, `GET /api/movies/{id}` : les séances ont le même format que dans la programmation ; `days` contient un élément par jour qui a au moins une séance, dans l'ordre des dates.
+
+```json
+{
+  "movieId": "2222…0005",
+  "title": "Bird",
+  "synopsis": "…",
+  "durationMinutes": 161,
+  "genre": "Drama",
+  "releaseDate": "1988-09-30",
+  "posterUrl": "https://…/poster.jpg",
+  "days": [
+    {
+      "date": "2026-10-31",
+      "screenings": [
+        { "screeningId": "b41c…", "roomName": "Salle 4", "startsAt": "2026-10-31T19:30:00", "price": 9.50, "remainingSeats": 12 }
+      ]
+    },
+    {
+      "date": "2027-10-30",
+      "screenings": [
+        { "screeningId": "33333333-…", "roomName": "Salle 2", "startsAt": "2027-10-30T20:30:00", "price": 12.00, "remainingSeats": 120 }
+      ]
+    }
+  ]
+}
+```
+
 ## Codes de réponse
 
 | Code | Quand | Exemple |
@@ -80,7 +109,7 @@ Exemple, `GET /api/schedule?date=2026-07-18` :
 | `400 Bad Request` | requête mal formée ou données invalides | date au mauvais format, nombre de places nul |
 | `401 Unauthorized` | authentification absente ou invalide | réserver sans être connecté _(US 2.1)_ |
 | `403 Forbidden` | connecté, mais rôle insuffisant | un spectateur qui modifie la programmation |
-| `404 Not Found` | ressource inexistante | séance inconnue |
+| `404 Not Found` | ressource inexistante | film inconnu (`/errors/movie-not-found`), séance inconnue |
 | `409 Conflict` | la demande est valide mais contredit l'état actuel | plus assez de places restantes, place déjà prise par un autre spectateur _(US 2.3)_ |
 | `500 Internal Server Error` | erreur imprévue | base injoignable |
 
@@ -107,7 +136,7 @@ Toutes les erreurs suivent le format standard **Problem Details** ([RFC 9457](ht
 
 ## Authentification
 
-Les endpoints publics (programmation, films à l'affiche, places restantes, inscription, connexion) ne demandent rien. Les autres exigent un utilisateur connecté, et selon le cas un rôle : le front envoie le jeton reçu à l'inscription ou à la connexion dans l'en-tête `Authorization: Bearer <jeton>`. Sans jeton valide, la réponse est `401` ; avec un rôle insuffisant, `403`. Mécanisme et règles : [sécurité](../security/security.md#authentification-et-rôles).
+Les endpoints publics (programmation, films à l'affiche, fiche d'un film, places restantes, inscription, connexion) ne demandent rien. Les autres exigent un utilisateur connecté, et selon le cas un rôle : le front envoie le jeton reçu à l'inscription ou à la connexion dans l'en-tête `Authorization: Bearer <jeton>`. Sans jeton valide, la réponse est `401` ; avec un rôle insuffisant, `403`. L'accès est refusé par défaut, y compris pour une route qui n'existe pas : un visiteur sans jeton reçoit alors `401`, et non `404`, ce qui l'empêche de sonder les routes de l'API. Mécanisme et règles : [sécurité](../security/security.md#authentification-et-rôles).
 
 ## Faire évoluer le contrat
 
