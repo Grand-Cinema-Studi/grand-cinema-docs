@@ -16,11 +16,11 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 
 | Niveau | Ce qui est vérifié | Outils | État |
 |---|---|---|---|
-| Unitaire | un handler ou une règle métier, isolé : dépendances simulées, aucune base | xUnit, Moq, Shouldly, `FakeTimeProvider` | Fait : 43 tests (US 1.1 : 9 ; US 2.1 : 34) |
-| Intégration (accès aux données) | un repository contre un vrai PostgreSQL, avec les vraies migrations | xUnit, Testcontainers (PostgreSQL 16 jetable) | Fait : 4 tests (US 1.1 : 2 ; US 2.1 : 2) |
-| Intégration (API) | un endpoint de bout en bout dans l'API : routage, sérialisation, codes HTTP, Problem Details, authentification, limitation des tentatives, base réelle | `WebApplicationFactory`, Testcontainers | Fait : 15 tests (US 1.1 : 3 ; US 2.1 : 10 ; `/health` et document OpenAPI : 2) |
+| Unitaire | un handler ou une règle métier, isolé : dépendances simulées, aucune base | xUnit, Moq, Shouldly, `FakeTimeProvider` | Fait : 50 tests (US 1.1 : 9 ; US 2.1 : 38 ; US 2.2 : 3) |
+| Intégration (accès aux données) | un repository contre un vrai PostgreSQL, avec les vraies migrations | xUnit, Testcontainers (PostgreSQL 16 jetable) | Fait : 8 tests (US 1.1 : 2 ; US 2.1 : 5 ; US 2.2 : 1) |
+| Intégration (API) | un endpoint de bout en bout dans l'API : routage, sérialisation, codes HTTP, Problem Details, authentification, limitation des tentatives, base réelle | `WebApplicationFactory`, Testcontainers | Fait : 20 tests (US 1.1 : 3 ; US 2.1 : 14 ; US 2.2 : 1 ; `/health` et document OpenAPI : 2) |
 | Concurrence | deux requêtes simultanées sur la dernière place : une seule réussit | Testcontainers, tâches parallèles | _(à venir, US 2.3)_ — voir [bug 0001](bugs/0001-double-booking.md) |
-| Composants front | un composant ou un service Angular isolé : réseau remplacé par `HttpTestingController`, service remplacé par une doublure | Vitest (jsdom), outils de test d'Angular | Fait : 46 tests (dépôt `grand-cinema-frontend`) |
+| Composants front | un composant ou un service Angular isolé : réseau remplacé par `HttpTestingController`, service remplacé par une doublure | Vitest (jsdom), outils de test d'Angular | Fait : 78 tests (dépôt `grand-cinema-frontend`) |
 | Système / bout en bout | le parcours complet dans un navigateur : consulter, réserver, payer en mode test, recevoir le billet, le scanner | Selenium (Bloc 2), automatisé sur la recette, limité aux parcours critiques | _(à venir, avec le front)_ |
 | Performance / charge | la tenue des pics du festival : 200 utilisateurs simultanés sur une séance, 95 % des requêtes en moins de 2 s, zéro double vente | JMeter | en préproduction, avant chaque mise en production et avant le festival _(à venir ; préproduction non montée pour le projet)_ |
 | Sécurité | failles courantes (injection SQL, XSS, CSRF, force brute, QR code falsifié ou réutilisé), dépendances vulnérables | SonarCloud et Dependabot à chaque Pull Request ; scan OWASP ZAP en préproduction, à chaque release | SonarCloud et Dependabot : fait (25/10/2026) ; OWASP ZAP _(à venir)_ |
@@ -63,6 +63,8 @@ refactor(us-1.1): extract movie schedule mapping
 Les Pull Requests fusionnées en merge commit conservent ces commits (voir le [workflow Git](../development/git-workflow.md#pull-requests)).
 
 Exception assumée : pour l'US 2.1, le code et les tests ont été écrits ensemble, en un seul passage (journal du backend, étape 12). Chaque test a été cassé volontairement pour vérifier qu'il sait échouer. Le cycle rouge, vert, refactor commit par commit reprend à partir de l'US 2.2.
+
+US 2.2 (places restantes) : le test d'API est écrit en premier et reste rouge jusqu'à la fin (boucle externe) ; viennent ensuite un cycle unitaire (la capacité moins les places prises) et un cycle d'intégration sur PostgreSQL (le comptage des places vendues ou bloquées), chacun avec son commit `red` puis `green`. Le cas limite de l'expiration (`>` et non `>=`) est vérifié par sabotage.
 
 Les 15 tests d'API ont été écrits après les endpoints qu'ils vérifient : ce sont des tests de contrat. Chacun a été vu rouge en sabotant le code qu'il protège (paramètre `date` ignoré, adresse du compte créé, conflit traduit en `400`, profil ouvert à tous, signature du jeton jamais vérifiée, `UseForwardedHeaders` retiré, adresse de serveur dans le document OpenAPI), puis le sabotage a été annulé. À partir de l'US 2.2, le test d'API d'un endpoint est écrit avant lui.
 

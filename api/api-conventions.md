@@ -14,7 +14,7 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 
 | Méthode | Route | Accès | Rôle | User story |
 |---|---|---|---|---|
-| `GET` | `/api/schedule?date=AAAA-MM-JJ` | public | films et séances d'un jour (aujourd'hui si la date est omise) ; films triés par titre, séances par heure | 1.1 |
+| `GET` | `/api/schedule?date=AAAA-MM-JJ` | public | films et séances d'un jour (aujourd'hui si la date est omise, toute date future acceptée) ; films triés par titre, séances par heure ; places restantes de chaque séance (`remainingSeats`) | 1.1, 2.2 |
 | `GET` | `/api/movies` | public | films à l'affiche (au moins une séance à venir), triés par titre | 1.1 |
 | `POST` | `/api/users` | public, limité à 10 appels par minute et par IP | création d'un compte spectateur ; `acceptPrivacyPolicy: true` obligatoire (sinon `400`, champ `acceptPrivacyPolicy`), date et version de la politique enregistrées ; `201` avec un jeton d'accès, `409` si l'adresse est déjà utilisée | 2.1 |
 | `POST` | `/api/tokens` | public, limité à 10 appels par minute et par IP | connexion ; `200` avec un jeton d'accès, `401` sans dire quelle donnée est fausse | 2.1 |
@@ -48,6 +48,8 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 
 Exemple, `GET /api/schedule?date=2026-07-18` :
 
+`remainingSeats` : capacité de la salle moins les places vendues (`Confirmed`) et celles bloquées par un paiement en cours (`PendingPayment` non expiré) ; `0` : séance complète. Calculé à chaque appel, sans cache (US 2.2).
+
 ```json
 {
   "date": "2026-07-18",
@@ -61,7 +63,7 @@ Exemple, `GET /api/schedule?date=2026-07-18` :
       "releaseDate": "2023-10-01",
       "posterUrl": "https://…/poster.jpg",
       "screenings": [
-        { "screeningId": "a83e…", "roomName": "Salle 1", "startsAt": "2026-07-18T20:30:00", "price": 9.50 }
+        { "screeningId": "a83e…", "roomName": "Salle 1", "startsAt": "2026-07-18T20:30:00", "price": 9.50, "remainingSeats": 42 }
       ]
     }
   ]
