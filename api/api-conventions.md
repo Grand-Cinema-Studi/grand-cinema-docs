@@ -22,7 +22,8 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 | `GET` | `/api/users/me` | connecté | profil de l'utilisateur identifié par le jeton | 2.1 |
 | `DELETE` | `/api/users/me` | connecté | suppression du compte identifié par le jeton (droit à l'effacement) ; `204`, `404` si le compte n'existe plus ; réservations gardées, sans lien avec le compte | 2.1 |
 | `POST` | `/api/reservations` | connecté | blocage de 1 à 10 places d'une séance pendant 10 minutes (`PendingPayment`), places attribuées par le cinéma ; `201` avec `Location` ; `400` (`seatCount`), `404 screening-not-found`, `409 screening-started`, `409 not-enough-seats` (y compris pour le second de deux clients sur la dernière place) | 2.3 |
-| `GET` | `/api/reservations/{id}` | connecté, propriétaire | un blocage ou une réservation de l'utilisateur, avec ses places et son statut (`PendingPayment`, `Expired` dès la fin des 10 minutes, `Confirmed` après paiement) ; `404 reservation-not-found` pour un identifiant inconnu comme pour celle d'un autre | 2.3 |
+| `GET` | `/api/reservations/{id}` | connecté, propriétaire | un blocage ou une réservation de l'utilisateur, avec son film (`movieId`), ses places et son statut (`PendingPayment`, `Expired` dès la fin des 10 minutes, `Cancelled` après une annulation, `Confirmed` après paiement) ; `404 reservation-not-found` pour un identifiant inconnu comme pour celle d'un autre | 2.3 |
+| `DELETE` | `/api/reservations/{id}` | connecté, propriétaire | annulation d'un blocage avant paiement : statut `Cancelled` (la réservation est gardée), places remises en vente aussitôt ; `204`, y compris pour un blocage déjà expiré ou déjà annulé (rien ne change) ; `404 reservation-not-found` pour un identifiant inconnu comme pour celle d'un autre ; `409 reservation-confirmed` pour une réservation payée | 2.3 |
 | `GET` | `/health` | public | état de l'application, pour la supervision et le script de déploiement | — |
 | `GET` | `/` | public | nom de l'API, pour un humain qui ouvre son adresse | — |
 
@@ -107,6 +108,7 @@ Exemple, `POST /api/reservations` avec `{ "screeningId": "…", "seatCount": 2 }
 {
   "reservationId": "a410…",
   "screeningId": "3333…",
+  "movieId": "2222…0005",
   "status": "PendingPayment",
   "seats": ["A1", "A2"],
   "totalAmount": 24.00,
@@ -114,7 +116,7 @@ Exemple, `POST /api/reservations` avec `{ "screeningId": "…", "seatCount": 2 }
 }
 ```
 
-`expiresAt` est un instant technique en UTC : le front en tire le compte à rebours affiché au spectateur.
+`expiresAt` est un instant technique en UTC : le front en tire le compte à rebours affiché au spectateur. `movieId` lui permet de ramener le spectateur à la fiche du film, après une annulation ou quand les places ont été libérées.
 
 ## Codes de réponse
 
@@ -122,12 +124,12 @@ Exemple, `POST /api/reservations` avec `{ "screeningId": "…", "seatCount": 2 }
 |---|---|---|
 | `200 OK` | lecture ou action réussie, avec un contenu | programmation du jour, éventuellement vide |
 | `201 Created` | ressource créée ; l'en-tête `Location` donne son adresse | places bloquées pour une réservation (`POST /api/reservations`) |
-| `204 No Content` | action réussie, sans contenu à renvoyer | suppression de son compte (`DELETE /api/users/me`) |
+| `204 No Content` | action réussie, sans contenu à renvoyer | suppression de son compte (`DELETE /api/users/me`), annulation d'un blocage (`DELETE /api/reservations/{id}`) |
 | `400 Bad Request` | requête mal formée ou données invalides | date au mauvais format, nombre de places nul |
 | `401 Unauthorized` | authentification absente ou invalide | réserver sans être connecté |
 | `403 Forbidden` | connecté, mais rôle insuffisant | un spectateur qui modifie la programmation |
 | `404 Not Found` | ressource inexistante | film inconnu (`/errors/movie-not-found`), séance inconnue |
-| `409 Conflict` | la demande est valide mais contredit l'état actuel | plus assez de places restantes, y compris pour le second de deux spectateurs sur la dernière place ; séance déjà commencée |
+| `409 Conflict` | la demande est valide mais contredit l'état actuel | plus assez de places restantes, y compris pour le second de deux spectateurs sur la dernière place ; séance déjà commencée ; annulation en ligne d'une réservation payée (`reservation-confirmed`) |
 | `500 Internal Server Error` | erreur imprévue | base injoignable |
 
 Une liste vide n'est pas une erreur : une journée sans séance renvoie `200` avec `"movies": []`, et c'est le front qui affiche le message « aucune séance ».
