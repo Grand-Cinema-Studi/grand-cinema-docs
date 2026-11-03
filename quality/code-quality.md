@@ -199,6 +199,18 @@ Seul échec rencontré, hors SonarCloud : `npm run format:check` signalait tous 
 - Pull Request `chore/cd-recette` (workflow `deploy.yml`) : aucun problème relevé. Les règles apprises sur le workflow du backend (problèmes 6 et 7 ci-dessus) ont été appliquées dès l'écriture : action AWS épinglée sur l'empreinte de son commit, `permissions: {}` puis droits déclarés par job, valeurs passées par `env:`.
 - Pull Request `feature/us-2-1-account-screens` (session, intercepteur, garde, écrans de compte, politique de confidentialité) : Quality Gate passé ; 78 tests (32 de plus).
 
+### Backend : paiement Stripe, US 3.1 (03/11/2026)
+
+Pull Request `feature/us-3-1-stripe-payment`. Premier passage : Quality Gate **refusé**, **75,8 %** de couverture du nouveau code (seuil : 80 %). Les lignes non couvertes étaient presque toutes dans l'adaptateur Stripe : `StripeOptions` (0 %) et `StripePaymentGateway` (32,7 %), dont la création de la page de paiement et le remboursement appellent le réseau.
+
+| Décision | Pourquoi |
+|---|---|
+| **Tester** l'adaptateur plutôt que l'exclure de la couverture | il porte des règles : montant en centimes, réservation transmise à Stripe, adresses de retour, durée de la page ; une erreur d'un facteur 100 sur le montant ne se voit qu'ici |
+| Client Stripe injecté (`IStripeClient`), et un faux gestionnaire HTTP dans les tests | la vraie bibliothèque Stripe construit la vraie requête, sans réseau : le test vérifie ce que Stripe recevrait |
+| 5 tests écrits après le code, chacun vu rouge par sabotage | même démarche que les tests de contrat de l'API (28/10/2026) |
+
+Second passage : Quality Gate **passé**. Total : 139 tests.
+
 ## Autres contrôles
 
 | Contrôle | Ce qu'il apporte | État |

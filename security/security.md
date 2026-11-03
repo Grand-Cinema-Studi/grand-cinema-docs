@@ -47,8 +47,8 @@ Les quatre rôles du Bloc 1 (`UserRole` dans le code) :
 
 ## Protection des données en transit et au repos
 
-- **HTTPS** obligatoire dès que l'authentification existe. Sur la recette, CloudFront fournit le HTTPS entre le navigateur et l'application (adresse `*.cloudfront.net`) _(à venir, mise en ligne)_ ; le tronçon CloudFront → serveur reste en HTTP, et le serveur n'accepte que les adresses de CloudFront (liste de préfixes gérée par AWS). En production : HTTPS de bout en bout (nom de domaine, certificat, répartiteur de charge), critère bloquant de mise en production ([guide de déploiement](../deployment/deploy-guide.md#critères-de-mise-en-production)).
-- Derrière CloudFront, l'API lit l'adresse du visiteur dans l'en-tête `X-Forwarded-For` (`UseForwardedHeaders`), pour que la limitation des tentatives de connexion s'applique par visiteur et non à tous à la fois _(à venir, mise en ligne)_.
+- **HTTPS** obligatoire dès que l'authentification existe. Sur la recette, CloudFront fournit le HTTPS entre le navigateur et l'application (adresse `*.cloudfront.net`) ; le tronçon CloudFront → serveur reste en HTTP, et le serveur n'accepte que les adresses de CloudFront (liste de préfixes gérée par AWS). En production : HTTPS de bout en bout (nom de domaine, certificat, répartiteur de charge), critère bloquant de mise en production ([guide de déploiement](../deployment/deploy-guide.md#critères-de-mise-en-production)).
+- Derrière CloudFront, l'API lit l'adresse du visiteur dans l'en-tête `X-Forwarded-For` (`UseForwardedHeaders`), pour que la limitation des tentatives de connexion s'applique par visiteur et non à tous à la fois.
 - La base PostgreSQL n'est joignable que par l'API : aucun port publié sur Internet.
 - Identifiants en GUID : impossibles à deviner ou à parcourir dans les URL.
 
@@ -57,15 +57,17 @@ Les quatre rôles du Bloc 1 (`UserRole` dans le code) :
 - **Aucun secret dans les dépôts, les images Docker ni GitHub.**
 - Développement : `.env` (ignoré par Git) et user-secrets .NET.
 - Recette et production : AWS SSM Parameter Store, chiffré (mot de passe de la base, clé de signature des jetons, clés Stripe) ; lu au déploiement par le rôle du serveur. La clé Stripe de test reste en recette ; la clé réelle n'existe qu'en production.
-- Intégration continue : accès à AWS par OIDC, sans clé stockée dans GitHub ; jeton SonarCloud en secret du dépôt _(à venir)_.
+- Intégration continue : accès à AWS par OIDC, sans clé stockée dans GitHub ; jeton SonarCloud en secret du dépôt.
 
 Détail par environnement : [environnements](../deployment/environments.md#secrets-et-configuration).
 
-## Paiement _(à venir, US 3.1)_
+## Paiement (US 3.1)
 
-- Le paiement est confié à **Stripe** : la saisie de la carte se fait sur un formulaire fourni par Stripe, et **aucune donnée de carte ne transite par l'API ni n'est stockée**. Le périmètre de conformité PCI DSS du projet reste minimal.
-- Une réservation n'est confirmée que sur notification de Stripe (webhook), dont la signature est vérifiée : un appel du navigateur ne suffit pas à se déclarer « payé ».
-- Clés Stripe en mode test sur tous les environnements du projet.
+- Le paiement est confié à **Stripe Checkout** : la carte est saisie sur la page hébergée par Stripe, et **aucune donnée de carte ne transite par l'API ni n'est stockée**. Le périmètre de conformité PCI DSS du projet reste minimal (questionnaire SAQ A).
+- Une réservation n'est confirmée que par la notification de Stripe (`POST /api/payments/stripe-webhook`, `checkout.session.completed`), dont la signature HMAC-SHA256 est vérifiée avant tout traitement, avec une tolérance de 5 minutes contre le rejeu. Une notification non signée reçoit `400`. Le retour du navigateur sur `?payment=success` n'est qu'un affichage : il ne suffit pas à se déclarer « payé ».
+- La confirmation est sans risque à répéter (une notification renvoyée par Stripe ne change rien) et prend le verrou de la séance : elle ne peut pas croiser la libération des places d'un blocage expiré. Un paiement sans place (arrivé après la libération, ou second paiement) est remboursé automatiquement.
+- Le paiement exige l'acceptation des conditions générales de vente ; leur date et leur version sont enregistrées sur la réservation.
+- Clés Stripe en mode test sur tous les environnements du projet : user-secrets en local, Parameter Store en recette (`stripe-secret-key`, `stripe-webhook-secret`).
 
 ## Billets _(à venir, US 3.2 et 4.1)_
 
@@ -76,19 +78,19 @@ Détail par environnement : [environnements](../deployment/environments.md#secre
 
 | Catégorie de risque | Mesure dans le projet | État |
 |---|---|---|
-| Contrôle d'accès défaillant | politiques par rôle vérifiées par l'API, accès refusé par défaut, accès limité à ses propres réservations, GUID | accès par défaut et GUID : fait ; rôles et réservations _(à venir, US 2.3 et 5.2)_ |
-| Défaillances cryptographiques | mots de passe hachés et salés, HTTPS | hachage : fait ; HTTPS par CloudFront _(à venir, mise en ligne)_ |
+| Contrôle d'accès défaillant | politiques par rôle vérifiées par l'API, accès refusé par défaut, accès limité à ses propres réservations, GUID | accès par défaut, GUID et réservations (celle d'un autre répond `404`) : fait ; rôles du personnel _(à venir, US 5.2)_ |
+| Défaillances cryptographiques | mots de passe hachés et salés, HTTPS | Fait (HTTPS par CloudFront sur la recette) |
 | Injection (SQL) | requêtes EF Core paramétrées, aucun SQL construit par concaténation | Fait |
-| Injection (XSS) | échappement automatique des affichages par Angular | _(à venir, front)_ |
-| Conception non sécurisée | double vente empêchée par la base et par une transaction ([bug 0001](../quality/bugs/0001-double-booking.md)) | contrainte : faite, transaction _(à venir, US 2.3)_ |
-| Mauvaise configuration | Swagger désactivé par défaut, aucune trace technique dans les réponses d'erreur, un seul port ouvert | Swagger : fait ; le reste _(à venir)_ |
-| Composants vulnérables | versions figées, alertes Dependabot, analyse SonarCloud | versions : fait ; outils _(à venir)_ |
+| Injection (XSS) | échappement automatique des affichages par Angular | Fait |
+| Conception non sécurisée | double vente empêchée par la base et par une transaction ([bug 0001](../quality/bugs/0001-double-booking.md)) | Fait (US 2.3, bug 0001 corrigé le 30/10/2026) ; notification de paiement signée (US 3.1) |
+| Mauvaise configuration | Swagger désactivé par défaut, aucune trace technique dans les réponses d'erreur, un seul port ouvert | Fait (un seul port ouvert, réservé à CloudFront) |
+| Composants vulnérables | versions figées, alertes Dependabot, analyse SonarCloud | Fait (Dependabot et SonarCloud à chaque Pull Request) |
 | Authentification défaillante | limitation des tentatives, message d'échec neutre | Fait |
 | Journalisation insuffisante | journaux de l'API (connexions refusées, erreurs), sans mot de passe ni donnée personnelle superflue | _(à venir)_ |
 
 ## Vérification
 
-- Tests automatisés des règles d'accès : un appel sans session reçoit `401`, un rôle insuffisant reçoit `403` _(à venir, US 2.1)_.
+- Tests automatisés des règles d'accès : un appel sans session reçoit `401`, un rôle insuffisant reçoit `403` : `401` testé (US 2.1 et 2.3) ; `403` _(à venir, US 5.2)_.
 - Analyse SonarCloud à chaque Pull Request, points sensibles de sécurité examinés (voir [qualité du code](../quality/code-quality.md)).
 - La [Definition of Done](https://github.com/Grand-Cinema-Studi/grand-cinema-docs/issues/24) impose, pour chaque story : mots de passe hachés, aucune donnée de carte stockée, données personnelles traitées selon le RGPD.
 - Avant le premier festival, un test d'intrusion par un prestataire est recommandé (hors budget du MVP, Bloc 2).

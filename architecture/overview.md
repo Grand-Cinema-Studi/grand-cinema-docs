@@ -8,11 +8,11 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 flowchart LR
     user["Spectateur, personnel du cinéma<br/>(navigateur, ordinateur ou smartphone)"]
     cdn["CloudFront<br/>CDN, HTTPS"]
-    front["Front-end Angular<br/>fichiers statiques sur S3 (à venir)"]
+    front["Front-end Angular<br/>fichiers statiques sur S3"]
     api["API Back-end<br/>ASP.NET Core sur EC2"]
     db[("PostgreSQL 16<br/>RDS en production")]
     tickets["S3<br/>billets et QR codes (à venir)"]
-    stripe["Stripe<br/>paiement (à venir)"]
+    stripe["Stripe<br/>paiement (mode test)"]
     watch["CloudWatch<br/>supervision (à venir)"]
 
     user -->|HTTPS| cdn
@@ -42,10 +42,10 @@ Découpage issu du Bloc 1, réalisé progressivement user story par user story :
 
 | Module | User stories | État |
 |---|---|---|
-| Programmation (consultation) | 1.1, 1.2 | Fait (`GET /api/schedule`) |
-| Authentification | 2.1 | développée sur sa branche (`POST /api/users`, `POST /api/tokens`, `GET /api/users/me`), fusion dans `dev` à venir |
-| Réservation | 2.2, 2.3 | à venir |
-| Paiement | 3.1 | à venir |
+| Programmation (consultation) | 1.1, 1.2 | Fait (`GET /api/schedule`, `GET /api/movies`, `GET /api/movies/{id}`) |
+| Authentification | 2.1 | Fait (`POST /api/users`, `POST /api/tokens`, `GET /api/users/me`, `DELETE /api/users/me`) |
+| Réservation | 2.2, 2.3 | Fait (places restantes ; `POST`, `GET` et `DELETE /api/reservations`) |
+| Paiement | 3.1 | Fait (`POST /api/reservations/{id}/payment`, `POST /api/payments/stripe-webhook`), en mode test |
 | Billets | 3.2, 4.1 | à venir |
 | Administration | 5.1, 5.2, 5.3 | à venir |
 
@@ -73,9 +73,10 @@ flowchart TB
 
 ## Points d'architecture structurants
 
-- **Pas de double vente** : les places sont bloquées dans une transaction PostgreSQL pendant le paiement, et une contrainte d'unicité `(séance, place)` refuse en base toute seconde vente, même en cas de bug applicatif. Pas de Redis : la base suffit au volume du cinéma. _(réservation à venir, US 2.3)_
-- **Blocage limité dans le temps** : places libérées si le paiement n'est pas validé au bout de 10 minutes (paramétrable). _(à venir, US 2.3)_
+- **Pas de double vente** : les places sont bloquées dans une transaction PostgreSQL pendant le paiement, et une contrainte d'unicité `(séance, place)` refuse en base toute seconde vente, même en cas de bug applicatif. Pas de Redis : la base suffit au volume du cinéma.
+- **Blocage limité dans le temps** : places libérées si le paiement n'est pas validé au bout de 10 minutes (paramétrable), dans la transaction même du blocage suivant, sans tâche planifiée.
 - **Heure du cinéma** : les séances sont enregistrées à l'heure locale du cinéma (Europe/Paris) ; les instants techniques (création, expiration) en UTC.
+- **Paiement confirmé par Stripe seul** : la carte est saisie chez Stripe ; une notification signée, vérifiée par l'API, passe la réservation à « payée », sous le même verrou que les blocages.
 - **Secrets hors du code** : aucun mot de passe ni clé dans les dépôts (voir [environnements](../deployment/environments.md)).
 
 ## Hébergement

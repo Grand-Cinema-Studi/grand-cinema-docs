@@ -23,7 +23,7 @@ CloudWatch   supervision : métriques, journaux, alertes
 | API Back-end (ASP.NET Core) | règles métier, sécurité, accès aux données | dépôt `grand-cinema-backend`, son propre pipeline : tests, image Docker, déploiement sur EC2 |
 | PostgreSQL | utilisateurs, films, salles, places, séances, réservations | RDS en production |
 | S3 (usage séparé du front) | billets dématérialisés et QR codes | US 3.2 _(à venir)_ |
-| Stripe | paiement par carte ; aucune donnée de carte ne transite par l'application | US 3.1 _(à venir)_ |
+| Stripe | paiement par carte ; aucune donnée de carte ne transite par l'application | US 3.1, en mode test sur la recette |
 | CloudWatch | supervision et alertes | voir « Supervision » |
 
 Le front et l'API sont deux applications séparées, qui ne communiquent que par HTTP et JSON : un changement d'interface ne touche pas l'API, et inversement.
@@ -33,8 +33,8 @@ Le front et l'API sont deux applications séparées, qui ne communiquent que par
 | Environnement | Rôle | Base de données | Paiement | État |
 |---|---|---|---|---|
 | Développement (poste) | écrire le code et les tests unitaires | PostgreSQL 16 en Docker Compose, jeux de données générés | Stripe simulé (doublure) | En place |
-| Test (intégration continue) | exécuter les tests automatisés à chaque Pull Request | PostgreSQL jetable (Testcontainers), recréé à chaque exécution avec les mêmes jeux de données | Stripe simulé, puis mode test | Tests d'intégration en local ; CI _(à venir)_ |
-| Recette | tests de bout en bout, recette métier au fil du sprint | données réalistes (salles de 70 à 300 places, séances presque complètes, période de festival) | Stripe en mode test | **environnement de démonstration du projet** _(à venir)_ |
+| Test (intégration continue) | exécuter les tests automatisés à chaque Pull Request | PostgreSQL jetable (Testcontainers), recréé à chaque exécution avec les mêmes jeux de données | Stripe simulé (doublure) ; signature vérifiée avec la vraie bibliothèque, sans réseau | En place |
+| Recette | tests de bout en bout, recette métier au fil du sprint | données réalistes (salles de 70 à 300 places, séances presque complètes, période de festival) | Stripe en mode test | **environnement de démonstration du projet**, en place |
 | Préproduction | valider la version complète avant la mise en production ; identique à la production, allumée seulement pour une release | données anonymisées, au volume de la production | Stripe en mode test | décrite, non montée |
 | Production | service réel | données réelles | Stripe réel | décrite, non montée |
 
@@ -80,16 +80,16 @@ Déployer, vérifier, revenir en arrière, sauvegarder : [guide de déploiement]
 
 | Environnement | Base de données | Chaîne de connexion (API) | Clés (jeton JWT, Stripe) |
 |---|---|---|---|
-| Développement | fichier `.env`, ignoré par Git | user-secrets .NET, hors du dépôt | user-secrets .NET ; Stripe simulé |
+| Développement | fichier `.env`, ignoré par Git | user-secrets .NET, hors du dépôt | user-secrets .NET ; clés Stripe de test, notifications relayées par la Stripe CLI (`stripe listen`) |
 | Test (CI) | générés par Testcontainers | générée par Testcontainers | valeurs de test, jamais réutilisées ailleurs |
-| Recette | SSM Parameter Store (chiffré) | variable d'environnement `ConnectionStrings__Default`, construite au déploiement | SSM Parameter Store ; **clé Stripe de test** |
+| Recette | SSM Parameter Store (chiffré) | variable d'environnement `ConnectionStrings__Default`, construite au déploiement | SSM Parameter Store ; **clé Stripe de test** et secret des notifications de la destination Stripe de la recette ; adresse du front (`front-base-url`) |
 | Production | SSM Parameter Store (chiffré) | idem | SSM Parameter Store ; **clé Stripe réelle**, contrôlée avant chaque mise en production |
 
 Aucun secret n'est versionné, ni dans les dépôts, ni dans les images Docker, ni dans GitHub. Les clés de production sont stockées hors du code, et leur présence est un critère de mise en production (voir le guide).
 
 Swagger est désactivé par défaut et s'active avec `Swagger__Enabled=true` (activé en développement et sur la recette pendant la correction).
 
-## Intégration et déploiement continus _(à venir)_
+## Intégration et déploiement continus
 
 Le front et l'API ont chacun leur dépôt et leur pipeline.
 
@@ -106,6 +106,6 @@ L'accès de GitHub à AWS passe par OIDC : aucune clé AWS n'est stockée dans G
 
 CloudWatch est la supervision de la cible. Pour la recette : alarmes sur l'état de l'instance et sur l'utilisation du processeur, alarme sur les erreurs 5xx de CloudFront. En production : alertes sur les erreurs, les temps de réponse et la saturation de la base (pas seulement des serveurs d'application), avec astreinte pendant le festival.
 
-## Comptes de démonstration _(à venir)_
+## Comptes de démonstration
 
 Un compte administrateur (`Manager`) et un compte spectateur (`Customer`) sont créés sur la recette ; leurs identifiants sont donnés dans les copies, pas dans les dépôts.

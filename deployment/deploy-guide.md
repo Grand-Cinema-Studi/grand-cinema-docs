@@ -68,13 +68,13 @@ Toute correction faite avant la mise en ligne repasse par les tests automatisés
 
 ### Le back-end
 
-#### Automatiquement _(à venir)_
+#### Automatiquement
 
 La fusion d'une Pull Request dans `dev` déclenche le workflow GitHub Actions du back-end :
 
 1. il rejoue les tests ;
 2. il construit l'image Docker de l'API et la publie dans GitHub Container Registry, étiquetée par le commit (`ghcr.io/grand-cinema-studi/grand-cinema-backend:<commit>`) ;
-3. il demande au serveur (par AWS Systems Manager, sans SSH) d'exécuter `deploy/deploy.sh <commit>` ;
+3. il demande au serveur (par AWS Systems Manager, sans SSH) de télécharger `deploy/deploy.sh` du commit dans un fichier propre à ce commit, puis de l'exécuter, **seulement si le téléchargement a réussi** (`&&`) ;
 4. il vérifie que `/health` répond.
 
 La mise en production est la même opération, lancée à la main après validation du Product Owner.
@@ -84,21 +84,23 @@ La mise en production est la même opération, lancée à la main après validat
 Depuis un terminal Session Manager ouvert sur le serveur (console AWS, EC2, « Se connecter »), avec le commit à déployer :
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Grand-Cinema-Studi/grand-cinema-backend/<commit>/deploy/deploy.sh -o /tmp/deploy.sh
-sudo bash /tmp/deploy.sh <commit>
+sudo curl -fsSL https://raw.githubusercontent.com/Grand-Cinema-Studi/grand-cinema-backend/<commit>/deploy/deploy.sh -o /tmp/deploy-<commit>.sh \
+  && sudo bash /tmp/deploy-<commit>.sh <commit>
 ```
+
+Un nom propre au commit, et `sudo` pour le téléchargement aussi : le 03/11/2026, un `/tmp/deploy.sh` laissé par une session manuelle (propriétaire `ssm-user`) ne pouvait plus être écrasé par `root` (protection `fs.protected_regular` d'Amazon Linux) ; le téléchargement échouait, et la commande suivante lançait l'ancien script. Docker Compose a refusé la configuration incomplète (`${VAR:?}`), sans arrêter la recette.
 
 #### Ce que fait le script
 
 1. Il télécharge le fichier Docker Compose **du commit déployé**.
-2. Il lit les secrets dans Parameter Store et écrit le fichier `.env` du serveur, lisible par `root` seul.
+2. Il lit les secrets dans Parameter Store (base, jetons, clés Stripe de test, adresse du front) et écrit le fichier `.env` du serveur, lisible par `root` seul. Docker Compose refuse de démarrer si l'un d'eux manque (`${VAR:?}`).
 3. Il télécharge l'image et ne recrée que les conteneurs qui changent (en général l'API) ; la base continue de tourner.
 4. Le conteneur `migrate` applique les migrations ; **l'API ne démarre que si elles ont réussi**.
 5. Il attend que `/health` réponde ; sinon, il affiche les journaux des migrations et de l'API, et échoue.
 
 ### Le front-end
 
-#### Automatiquement _(à venir)_
+#### Automatiquement
 
 La fusion d'une Pull Request dans `dev` du dépôt `grand-cinema-frontend` déclenche son workflow :
 
@@ -129,8 +131,8 @@ Puis, dans un navigateur : la page d'accueil du front (la nouvelle version s'aff
 - **API** : relancer le script avec un commit précédent dont l'image existe (liste dans les Packages GitHub de l'organisation) :
 
   ```bash
-  curl -fsSL https://raw.githubusercontent.com/Grand-Cinema-Studi/grand-cinema-backend/<ancien-commit>/deploy/deploy.sh -o /tmp/deploy.sh
-  sudo bash /tmp/deploy.sh <ancien-commit>
+  sudo curl -fsSL https://raw.githubusercontent.com/Grand-Cinema-Studi/grand-cinema-backend/<ancien-commit>/deploy/deploy.sh -o /tmp/deploy-<ancien-commit>.sh \
+    && sudo bash /tmp/deploy-<ancien-commit>.sh <ancien-commit>
   ```
 
 - **Front** : republier le build précédent (relancer le workflow sur le commit précédent), ce qui invalide le cache CloudFront.
@@ -171,6 +173,6 @@ Les données perdues au plus sont celles saisies depuis la dernière sauvegarde,
 | Pas de préproduction montée | les critères propres à la préproduction (scan ZAP, test de charge JMeter) sont décrits mais pas exécutés sur un environnement identique à la production | préproduction allumée pour chaque release |
 | Durée de la période gratuite d'AWS | l'environnement doit être migré ou arrêté à son terme | images sur GitHub, indépendantes d'AWS |
 
-## Comptes de démonstration _(à venir)_
+## Comptes de démonstration
 
 Un compte administrateur (`Manager`) et un compte spectateur (`Customer`) sont créés sur la recette. Leurs identifiants sont donnés dans les copies, jamais dans les dépôts.
