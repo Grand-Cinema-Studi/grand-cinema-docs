@@ -14,7 +14,7 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 
 | Méthode | Route | Accès | Rôle | User story |
 |---|---|---|---|---|
-| `GET` | `/api/schedule?date=AAAA-MM-JJ` | public | films et séances d'un jour (aujourd'hui si la date est omise, toute date future acceptée) ; films triés par titre, séances par heure ; places restantes de chaque séance (`remainingSeats`) | 1.1, 2.2 |
+| `GET` | `/api/schedule?date=AAAA-MM-JJ` | public | films et séances d'un jour (aujourd'hui si la date est omise, toute date future acceptée), séances pas encore commencées seulement ; films triés par titre, séances par heure ; places restantes de chaque séance (`remainingSeats`) | 1.1, 2.2 |
 | `GET` | `/api/movies` | public | films à l'affiche (au moins une séance à venir), triés par titre | 1.1 |
 | `GET` | `/api/movies/{id}` | public | fiche d'un film : toutes ses séances à venir, sans limite de date (réservation jusqu'à un an à l'avance), regroupées par jour et triées par heure, avec les places restantes ; `404` (`/errors/movie-not-found`) si le film n'existe pas | 1.1, 2.2 |
 | `POST` | `/api/users` | public, limité à 10 appels par minute et par IP | création d'un compte spectateur ; `acceptPrivacyPolicy: true` obligatoire (sinon `400`, champ `acceptPrivacyPolicy`), date et version de la politique enregistrées ; `201` avec un jeton d'accès, `409` si l'adresse est déjà utilisée | 2.1 |
