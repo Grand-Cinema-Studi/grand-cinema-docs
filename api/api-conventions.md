@@ -26,6 +26,10 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 | `POST` | `/api/reservations/{id}/payment` | connecté, propriétaire | page de paiement Stripe d'un blocage valable : `acceptTermsOfSale: true` obligatoire (sinon `400`, champ `acceptTermsOfSale`), date et version des conditions générales de vente enregistrées ; `200` avec `checkoutUrl` ; `404 reservation-not-found`, `409 reservation-paid`, `409 hold-expired` (10 minutes écoulées ou blocage annulé) | 3.1 |
 | `POST` | `/api/payments/stripe-webhook` | public, réservé à Stripe : signature `Stripe-Signature` vérifiée avant tout | notification de Stripe ; `400` si elle n'est pas signée par Stripe ; un paiement abouti (`checkout.session.completed`) confirme la réservation une seule fois (`200`, y compris pour une notification répétée) ; un paiement arrivé après la libération des places, ou un second paiement, est remboursé | 3.1 |
 | `DELETE` | `/api/reservations/{id}` | connecté, propriétaire | annulation d'un blocage avant paiement : statut `Cancelled` (la réservation est gardée), places remises en vente aussitôt ; `204`, y compris pour un blocage déjà expiré ou déjà annulé (rien ne change) ; `404 reservation-not-found` pour un identifiant inconnu comme pour celle d'un autre ; `409 reservation-confirmed` pour une réservation payée | 2.3 |
+| `GET` | `/api/programming?date=AAAA-MM-JJ` | rôle `Manager` | programmation d'un jour pour le responsable : toutes les séances (commencées comprises) avec `takenSeats` (places bloquées ou vendues) et `capacity`, le catalogue des films (`movies`, avec `durationMinutes`) et les salles (`rooms`) | 5.2 |
+| `POST` | `/api/programming/screenings` | rôle `Manager` | création d'une séance (`movieId`, `roomId`, `startsAt`, `price`) ; `201` avec `screeningId` et `Location` ; `400` (`startsAt` passé ou avec fuseau, `price` nul ou négatif), `404 movie-not-found`, `404 room-not-found`, `409 room-not-available` (salle occupée, nettoyage de 15 minutes compris) | 5.2 |
+| `PUT` | `/api/programming/screenings/{id}` | rôle `Manager` | nouvelle date, heure et prix d'une séance (`startsAt`, `price`) ; ni la salle ni le film ; `204` ; `400`, `404 screening-not-found`, `409 screening-started`, `409 room-not-available`, `409 screening-has-reservations` (voir ci-dessous) | 5.2 |
+| `DELETE` | `/api/programming/screenings/{id}` | rôle `Manager` | annulation d'une séance : elle disparaît de toutes les lectures, ses blocages passent à `Cancelled`, ses ventes sont gardées ; `204` ; `404 screening-not-found`, `409 screening-started`, `409 screening-has-reservations` | 5.2 |
 | `GET` | `/health` | public | état de l'application, pour la supervision et le script de déploiement | — |
 | `GET` | `/` | public | nom de l'API, pour un humain qui ouvre son adresse | — |
 
@@ -45,7 +49,7 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
   | Donnée | Format | Exemple |
   |---|---|---|
   | Jour (`DateOnly`) | `AAAA-MM-JJ` | `"2026-07-18"` |
-  | Heure d'une séance | heure locale du cinéma (Europe/Paris), sans fuseau | `"2026-07-18T20:30:00"` |
+  | Heure d'une séance | heure locale du cinéma (Europe/Paris), sans fuseau ; envoyée avec un `Z` ou un décalage, elle est refusée (`400`) plutôt que convertie | `"2026-07-18T20:30:00"` |
   | Instant technique (création, expiration) | UTC, suffixe `Z` | `"2026-07-18T18:41:07Z"` |
 
   Une séance « à 20 h 30 » reste à 20 h 30 quel que soit le fuseau du serveur ou du navigateur ; un instant technique est absolu.
@@ -138,9 +142,11 @@ Le front y envoie le spectateur : la carte est saisie sur la page de Stripe. Str
 | `400 Bad Request` | requête mal formée ou données invalides | date au mauvais format, nombre de places nul, conditions générales de vente non acceptées, notification non signée par Stripe |
 | `401 Unauthorized` | authentification absente ou invalide | réserver sans être connecté |
 | `403 Forbidden` | connecté, mais rôle insuffisant | un spectateur qui modifie la programmation |
-| `404 Not Found` | ressource inexistante | film inconnu (`/errors/movie-not-found`), séance inconnue |
-| `409 Conflict` | la demande est valide mais contredit l'état actuel | plus assez de places restantes, y compris pour le second de deux spectateurs sur la dernière place ; séance déjà commencée ; paiement d'un blocage expiré (`hold-expired`) ou déjà payé (`reservation-paid`) ; plus de 10 places pour un même compte sur une séance (`seat-limit-reached`) ; annulation en ligne d'une réservation payée (`reservation-confirmed`) |
+| `404 Not Found` | ressource inexistante | film inconnu (`/errors/movie-not-found`), séance inconnue ou annulée, salle inconnue (`room-not-found`) |
+| `409 Conflict` | la demande est valide mais contredit l'état actuel | plus assez de places restantes, y compris pour le second de deux spectateurs sur la dernière place ; séance déjà commencée ; paiement d'un blocage expiré (`hold-expired`) ou déjà payé (`reservation-paid`) ; plus de 10 places pour un même compte sur une séance (`seat-limit-reached`) ; annulation en ligne d'une réservation payée (`reservation-confirmed`) ; salle déjà occupée à cette heure (`room-not-available`) ; séance dont des places sont prises, tant que la demande n'est pas confirmée (`screening-has-reservations`) |
 | `500 Internal Server Error` | erreur imprévue | base injoignable |
+
+**Confirmation d'une demande** (US 5.2) : quand des places d'une séance sont bloquées ou vendues, sa modification ou son annulation répond `409 screening-has-reservations` ; le front affiche le nombre de places et demande confirmation, puis renvoie la même demande avec `?confirmed=true`. L'avertissement est porté par l'API : aucun client ne peut le sauter.
 
 Une liste vide n'est pas une erreur : une journée sans séance renvoie `200` avec `"movies": []`, et c'est le front qui affiche le message « aucune séance ».
 
