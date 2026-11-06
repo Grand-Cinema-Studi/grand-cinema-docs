@@ -71,10 +71,13 @@ Détail par environnement : [environnements](../deployment/environments.md#secre
 - Le paiement exige l'acceptation des conditions générales de vente ; leur date et leur version sont enregistrées sur la réservation.
 - Clés Stripe en mode test sur tous les environnements du projet : user-secrets en local, Parameter Store en recette (`stripe-secret-key`, `stripe-webhook-secret`).
 
-## Billets _(à venir, US 3.2 et 4.1)_
+## Billets (US 3.2, fait le 06/11/2026 ; contrôle : US 4.1)
 
-- Le QR code contient un identifiant impossible à deviner, jamais des données lisibles.
-- Un billet ne peut être validé qu'une fois : le scan enregistre son utilisation.
+- Le QR code ne contient que le **code du billet** : 32 caractères hexadécimaux, 128 bits tirés par le générateur cryptographique de .NET (`RandomNumberGenerator`). Il ne se devine pas, et ne contient aucune donnée personnelle ni l'identifiant de la réservation, qui circule dans les adresses du site.
+- Aucun billet sans paiement confirmé : le code est écrit par la même instruction `UPDATE` que le passage à `Confirmed`, et seulement si la réservation attendait son paiement ; une notification Stripe reçue deux fois ne le change pas. Un index unique interdit deux billets de même code.
+- Un billet ne se lit que par son propriétaire : `404 ticket-not-found` pour un billet d'autrui, comme pour une réservation non payée, sans révéler lequel des deux.
+- Le QR code est dessiné par le navigateur, dans le gabarit Angular : aucune image stockée, aucun HTML injecté, la protection d'Angular contre le XSS reste active. Le billet d'une séance annulée n'affiche pas de QR code.
+- _À venir (US 4.1)_ : un billet ne pourra être validé qu'une fois, le scan enregistrant son utilisation.
 
 ## Correspondance avec le Top 10 de l'OWASP
 

@@ -11,7 +11,6 @@ flowchart LR
     front["Front-end Angular<br/>fichiers statiques sur S3"]
     api["API Back-end<br/>ASP.NET Core sur EC2"]
     db[("PostgreSQL 16<br/>RDS en production")]
-    tickets["S3<br/>billets et QR codes (à venir)"]
     stripe["Stripe<br/>paiement (mode test)"]
     watch["CloudWatch<br/>supervision (à venir)"]
 
@@ -19,7 +18,6 @@ flowchart LR
     cdn -->|"fichiers du front"| front
     cdn -->|"HTTP JSON /api/..."| api
     api -->|EF Core| db
-    api --> tickets
     api -->|"API Stripe"| stripe
     api -.-> watch
 ```
@@ -30,9 +28,10 @@ flowchart LR
 | Front-end (Angular) | application web (SPA) : programmation, compte, réservation, billets, écrans du personnel ; fichiers statiques sur S3 | [grand-cinema-frontend](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend) |
 | API Back-end (ASP.NET Core) | règles métier, sécurité, accès aux données ; aucune page HTML ; conteneur Docker sur EC2 | [grand-cinema-backend](https://github.com/Grand-Cinema-Studi/grand-cinema-backend) |
 | PostgreSQL | utilisateurs, films, salles, places, séances, réservations | schéma : [erd.md](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/blob/dev/docs/database/erd.md) |
-| S3 (billets) | billets dématérialisés et QR codes (US 3.2), usage séparé du bucket du front | AWS |
 | Stripe | paiement par carte ; aucune donnée de carte ne transite par l'application ni n'est stockée ; conformité PCI-DSS portée par Stripe | service tiers |
 | CloudWatch | supervision : métriques, journaux, alertes | AWS |
+
+Billets : le Bloc 1 prévoyait un bucket S3 pour les billets et leurs QR codes. Il n'est pas créé (US 3.2) : le QR code n'est qu'une autre écriture du code du billet, que l'API renvoie et que le navigateur dessine. Il n'y a donc aucun fichier à stocker, à protéger ni à facturer.
 
 Le front et l'API sont deux applications séparées qui ne communiquent que par HTTP et JSON : chacune a son dépôt et son pipeline, et se développe, se teste et se déploie seule (front : S3 + CloudFront ; API : EC2).
 
@@ -46,8 +45,8 @@ Découpage issu du Bloc 1, réalisé progressivement user story par user story :
 | Authentification | 2.1 | Fait (`POST /api/users`, `POST /api/tokens`, `GET /api/users/me`, `DELETE /api/users/me`) |
 | Réservation | 2.2, 2.3 | Fait (places restantes ; `POST`, `GET` et `DELETE /api/reservations`) |
 | Paiement | 3.1 | Fait (`POST /api/reservations/{id}/payment`, `POST /api/payments/stripe-webhook`), en mode test |
-| Billets | 3.2, 4.1 | à venir |
-| Administration | 5.1, 5.2, 5.3 | à venir |
+| Billets | 3.2, 4.1 | Fait pour l'US 3.2 (`GET /api/reservations/{id}/ticket`, `GET /api/users/me/tickets`) : code du billet tiré au paiement confirmé, QR code dessiné par le front ; contrôle (US 4.1) à venir |
+| Administration | 5.1, 5.2, 5.3 | Fait (`/api/programming`, `GET /api/reservation-tracking`), réservé au personnel |
 
 ## Architecture du backend
 
