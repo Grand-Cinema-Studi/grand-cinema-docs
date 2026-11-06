@@ -38,13 +38,14 @@ Les quatre rôles du Bloc 1 (`UserRole` dans le code) :
 | Consulter les réservations au guichet | | | Oui (lecture seule) | | Oui |
 | Scanner et valider un billet | | | | Oui | |
 | Gérer la programmation | | | | | Oui |
-| Suivre les réservations | | | | | Oui |
+| Suivre les réservations | | | Oui (lecture seule) | | Oui |
 
 - Chaque endpoint déclare qui peut l'appeler (politiques d'autorisation d'ASP.NET Core) ; un endpoint sans déclaration n'est accessible qu'aux utilisateurs connectés (politique de repli), jamais par oubli au public.
 - Les droits sont vérifiés par l'API, jamais seulement par le front : masquer un bouton n'est pas une protection.
 - Un spectateur n'accède qu'à ses propres réservations : l'identifiant de l'utilisateur vient de sa session, pas de l'URL ni du corps de la requête.
 - Un compte créé par l'inscription publique a toujours le rôle `Customer` : les rôles du personnel ne s'obtiennent pas en s'inscrivant.
 - La programmation (`/api/programming…`, US 5.2) est réservée au rôle `Manager` par une politique d'autorisation posée sur tout le groupe d'endpoints (`RequireRole`, d'après le rôle du jeton) : un spectateur ou un caissier reçoit `403`, un visiteur `401`. Le front masque aussi le lien et la page, par confort seulement.
+- Le suivi des réservations (`GET /api/reservation-tracking`, US 5.3 et 5.1) est ouvert au responsable et au caissier par une politique nommée, `reservation-tracking` (`RequireRole(Manager, Cashier)`). Le caissier n'a ainsi qu'une lecture : aucun endpoint d'écriture ne lui est ouvert, et la programmation lui répond `403`. Un droit se donne endpoint par endpoint ; tout le reste reste fermé par défaut.
 
 ## Protection des données en transit et au repos
 
@@ -79,7 +80,7 @@ Détail par environnement : [environnements](../deployment/environments.md#secre
 
 | Catégorie de risque | Mesure dans le projet | État |
 |---|---|---|
-| Contrôle d'accès défaillant | politiques par rôle vérifiées par l'API, accès refusé par défaut, accès limité à ses propres réservations, GUID | accès par défaut, GUID et réservations (celle d'un autre répond `404`) : fait ; rôle du responsable sur la programmation : fait (US 5.2, 04/11/2026) ; caissier et contrôleur _(à venir, US 5.1 et 4.1)_ |
+| Contrôle d'accès défaillant | politiques par rôle vérifiées par l'API, accès refusé par défaut, accès limité à ses propres réservations, GUID | accès par défaut, GUID et réservations (celle d'un autre répond `404`) : fait ; rôle du responsable sur la programmation : fait (US 5.2, 04/11/2026) ; caissier en lecture seule sur le suivi des réservations : fait (US 5.1, 06/11/2026) ; contrôleur _(à venir, US 4.1)_ |
 | Défaillances cryptographiques | mots de passe hachés et salés, HTTPS | Fait (HTTPS par CloudFront sur la recette) |
 | Injection (SQL) | requêtes EF Core paramétrées, aucun SQL construit par concaténation | Fait |
 | Injection (XSS) | échappement automatique des affichages par Angular | Fait |
@@ -91,7 +92,7 @@ Détail par environnement : [environnements](../deployment/environments.md#secre
 
 ## Vérification
 
-- Tests automatisés des règles d'accès : un appel sans session reçoit `401`, un rôle insuffisant reçoit `403` : `401` testé (US 2.1 et 2.3) ; `403` testé pour un spectateur et un caissier sur la programmation (US 5.2).
+- Tests automatisés des règles d'accès : un appel sans session reçoit `401`, un rôle insuffisant reçoit `403` : `401` testé (US 2.1 et 2.3) ; `403` testé pour un spectateur et un caissier sur la programmation (US 5.2), et pour un spectateur sur le suivi des réservations (US 5.3) ; `200` testé pour le caissier sur le suivi (US 5.1).
 - Analyse SonarCloud à chaque Pull Request, points sensibles de sécurité examinés (voir [qualité du code](../quality/code-quality.md)).
 - La [Definition of Done](https://github.com/Grand-Cinema-Studi/grand-cinema-docs/issues/24) impose, pour chaque story : mots de passe hachés, aucune donnée de carte stockée, données personnelles traitées selon le RGPD.
 - Avant le premier festival, un test d'intrusion par un prestataire est recommandé (hors budget du MVP, Bloc 2).
