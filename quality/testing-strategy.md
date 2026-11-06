@@ -165,5 +165,6 @@ Ces environnements sont ceux du Bloc 2. Pour le projet, seule la recette est en 
   | Majeure | fonction importante dégradée, avec contournement | corrigée dans le sprint ; la story ne peut pas passer « Terminé » |
   | Mineure | défaut d'affichage ou de confort | ajoutée au backlog, priorisée par le Product Owner |
 
+- L'issue est ouverte dans le dépôt où se trouve la cause du bug (backend ou frontend) : le correctif, sa Pull Request et l'issue sont au même endroit, et la Pull Request la ferme avec `Fixes #<numéro>`. Les US et les epics, elles, sont dans le dépôt de documentation. Exemples : les issues #57 à #61 du backend (double vente de la dernière place, limite de 10 places contournée avec plusieurs onglets, séances déjà commencées proposées, erreur 500 sur une heure avec fuseau, carrousel vide le soir).
 - Une anomalie corrigée commence par un test qui la reproduit (rouge), puis le correctif (vert) : le test empêche qu'elle revienne.
 - Les anomalies analysées en détail sont documentées dans [`bugs/`](bugs/).
