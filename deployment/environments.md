@@ -22,7 +22,7 @@ CloudWatch   supervision : métriques, journaux, alertes
 | Front-end (Angular) | application web (SPA) : programmation, compte, réservation, billets, écrans du personnel | dépôt `grand-cinema-frontend`, son propre pipeline : compilation, publication sur S3, invalidation du cache CloudFront |
 | API Back-end (ASP.NET Core) | règles métier, sécurité, accès aux données | dépôt `grand-cinema-backend`, son propre pipeline : tests, image Docker, déploiement sur EC2 |
 | PostgreSQL | utilisateurs, films, salles, places, séances, réservations | RDS en production |
-| S3 (usage séparé du front) | billets dématérialisés et QR codes | US 3.2 _(à venir)_ |
+| Billets dématérialisés | code du billet en base (`TicketCode`) ; le QR code est dessiné par le navigateur, aucun fichier stocké | US 3.2 ; pas de bucket S3 (écart avec la cible, voir plus bas) |
 | Stripe | paiement par carte ; aucune donnée de carte ne transite par l'application | US 3.1, en mode test sur la recette |
 | CloudWatch | supervision et alertes | voir « Supervision » |
 
@@ -65,7 +65,7 @@ SSM Session Manager   accès au serveur sans SSH ni port d'administration ouvert
 | Base | RDS PostgreSQL (sauvegardes et mises à jour gérées) | PostgreSQL en conteneur sur le serveur | budget ; seule la chaîne de connexion change pour passer à RDS |
 | HTTPS | de bout en bout | entre le navigateur et CloudFront ; HTTP entre CloudFront et le serveur | pas de nom de domaine ni de répartiteur de charge ; le serveur n'accepte que les adresses de CloudFront (liste de préfixes gérée par AWS) |
 | Supervision | CloudWatch | alarmes CloudWatch de base _(à venir)_ | voir « Supervision » |
-| Billets | S3 | à venir avec l'US 3.2 | story pas encore développée |
+| Billets | S3 | aucun stockage : code du billet en base, QR code dessiné par le navigateur (US 3.2) | rien à stocker : le QR code n'est qu'une autre écriture du code du billet ; un fichier par billet aurait coûté du stockage, des droits d'accès et un risque de fuite, sans rien apporter |
 
 - **Une seule adresse** pour le front et l'API : CloudFront transmet `/api/*` au serveur (cache désactivé, en-tête `Authorization` et toutes les méthodes HTTP transmis). Le navigateur appelle `/api/...` sur le site qu'il affiche, donc **pas de CORS** à configurer.
 - **Routage Angular** : une CloudFront Function (`spa-rewrite`, événement *viewer request*), attachée au **seul comportement par défaut**, sert `index.html` pour toute URL sans extension (`/schedule`, `/account`), pour que les routes de l'application fonctionnent au rechargement. Les « réponses d'erreur personnalisées » de CloudFront ne sont **pas** utilisées : elles s'appliquent à toute la distribution, et transformeraient les `403` et `404` de l'API en page HTML avec un code `200`, ce qui casserait le format Problem Details des [conventions d'API](../api/api-conventions.md).

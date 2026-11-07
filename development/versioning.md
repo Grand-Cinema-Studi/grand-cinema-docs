@@ -11,7 +11,7 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 | Code source, tests | Git, un dépôt par composant | historique complet, revue par Pull Request |
 | Version du SDK .NET | `global.json` du backend | même compilation sur tous les postes et en intégration continue |
 | Outils .NET (`dotnet-ef`) | `dotnet-tools.json` du backend | même version d'outil partout, restaurée par `dotnet tool restore` |
-| Versions des bibliothèques | fichiers `.csproj` (backend), `package-lock.json` (frontend, _à venir_) | versions exactes, pas de mise à jour silencieuse |
+| Versions des bibliothèques | fichiers `.csproj` (backend), `package-lock.json` (frontend) | versions exactes, pas de mise à jour silencieuse |
 | Schéma de la base | migrations EF Core, et `schema.sql` généré depuis elles | chaque évolution du schéma est datée, relue et rejouable sur toute base |
 | Version de PostgreSQL | image `postgres:16` dans Docker Compose | même moteur en local, en test et en production |
 | Images Docker de l'application | GitHub Container Registry, une image par commit _(à venir)_ | ce qui tourne en production est identifié exactement, et l'on peut revenir à une image précédente |
@@ -31,19 +31,19 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 - `1.0.0` correspond au MVP complet : le parcours consultation → réservation → paiement → billet → contrôle.
 - Le type des commits ([Conventional Commits](git-workflow.md#messages-de-commit)) indique la partie à augmenter : `fix` → correctif, `feat` → mineur, `!` ou `BREAKING CHANGE` → majeur.
 
-## Tags et notes de version _(à venir)_
+## Tags et notes de version
 
-À chaque fusion de `dev` dans `main` :
+Aucun tag n'a été posé pendant le développement du MVP. Le premier est **`v1.0.0`**, au gel des fonctionnalités du 14/11/2026 : le MVP complet, après la recette consignée dans le [procès-verbal de recette](../quality/acceptance-report.md). Ensuite, à chaque fusion de `dev` dans `main` :
 
 1. un tag Git annoté `v<version>` est posé sur le commit de fusion :
 
    ```bash
    git switch main && git pull
-   git tag -a v0.2.0 -m "v0.2.0"
-   git push origin v0.2.0
+   git tag -a v1.0.0 -m "v1.0.0 – MVP"
+   git push origin v1.0.0
    ```
 
-2. une release GitHub est créée depuis ce tag, avec la liste des changements produite à partir des messages de commit et des Pull Requests (`gh release create v0.2.0 --generate-notes`).
+2. une release GitHub est créée depuis ce tag, avec la liste des changements produite à partir des messages de commit et des Pull Requests (`gh release create v1.0.0 --generate-notes`).
 
 Le backend et le frontend ont chacun leur numéro de version : ils sont livrés indépendamment, tant que le contrat de l'API est respecté.
 

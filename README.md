@@ -34,6 +34,7 @@ grand-cinema-docs/
 ├── quality/                   qualité et tests
 │   ├── testing-strategy.md    niveaux de tests, TDD, couverture, anomalies
 │   ├── code-quality.md        SonarCloud et quality gate
+│   ├── acceptance-report.md   procès-verbal de recette du MVP : chaque critère rejoué sur la recette
 │   └── bugs/                  analyses d'anomalies : identification, reproduction, correctif, validation
 ├── security/                  sécurité
 │   ├── security.md            authentification, rôles, secrets, paiement, Top 10 de l'OWASP
@@ -75,6 +76,7 @@ Les éléments marqués _(à venir)_ dans les documents sont décidés mais pas 
 |---|---|
 | [Stratégie de tests](quality/testing-strategy.md) | Qu'est-ce qui est testé, à quel niveau, et comment le prouver ? |
 | [Qualité du code](quality/code-quality.md) | Quels contrôles automatiques, et quels seuils bloquent une fusion ? |
+| [Procès-verbal de recette du MVP](quality/acceptance-report.md) | Chaque critère d'acceptation a-t-il été vérifié sur la recette, et le Product Owner a-t-il accepté le MVP ? |
 | [Bug 0001 – Double réservation](quality/bugs/0001-double-booking.md) | Comment la même place pourrait-elle être vendue deux fois, et comment l'empêcher ? |
 
 ### Sécurité
