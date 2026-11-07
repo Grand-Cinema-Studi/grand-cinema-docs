@@ -33,7 +33,7 @@ Les quatre rôles du Bloc 1 (`UserRole` dans le code) :
 
 | Action | Visiteur | Spectateur (`Customer`) | Caissier (`Cashier`) | Contrôleur (`TicketInspector`) | Responsable (`Manager`) |
 |---|---|---|---|---|---|
-| Consulter la programmation et les places restantes | Oui | Oui | Oui | Oui | Oui |
+| Consulter la programmation et les places restantes | Oui | Oui | (renvoyé vers sa page) | (renvoyé vers sa page) | Oui |
 | Réserver et payer, voir ses billets | | Oui | | | |
 | Consulter les réservations au guichet | | | Oui (lecture seule) | | Oui |
 | Scanner et valider un billet | | | | Oui | |
@@ -45,6 +45,7 @@ Les quatre rôles du Bloc 1 (`UserRole` dans le code) :
 - Un spectateur n'accède qu'à ses propres réservations : l'identifiant de l'utilisateur vient de sa session, pas de l'URL ni du corps de la requête.
 - Un compte créé par l'inscription publique a toujours le rôle `Customer` : les rôles du personnel ne s'obtiennent pas en s'inscrivant.
 - La programmation (`/api/programming…`, US 5.2) est réservée au rôle `Manager` par une politique d'autorisation posée sur tout le groupe d'endpoints (`RequireRole`, d'après le rôle du jeton) : un spectateur ou un caissier reçoit `403`, un visiteur `401`. Le front masque aussi le lien et la page, par confort seulement.
+- L'achat (`POST /api/reservations`, première étape de tout achat) est réservé au rôle `Customer` par la politique `customer` (décision du Product Owner, 07/11/2026) : le caissier, le contrôleur et le responsable reçoivent `403`. Le paiement, l'annulation et la lecture d'une réservation sont réservés à son propriétaire : sans blocage possible, le personnel n'a rien à payer. Le front ne propose l'achat qu'à un visiteur ou un spectateur, et renvoie le caissier et le contrôleur de l'accueil et des films vers leur page (`/tracking`, `/ticket-check`) : chaque rôle n'a que les droits de son métier (moindre privilège).
 - Le suivi des réservations (`GET /api/reservation-tracking`, US 5.3 et 5.1) est ouvert au responsable et au caissier par une politique nommée, `reservation-tracking` (`RequireRole(Manager, Cashier)`). Le caissier n'a ainsi qu'une lecture : aucun endpoint d'écriture ne lui est ouvert, et la programmation lui répond `403`. Un droit se donne endpoint par endpoint ; tout le reste reste fermé par défaut.
 
 ## Protection des données en transit et au repos
@@ -85,7 +86,7 @@ Détail par environnement : [environnements](../deployment/environments.md#secre
 
 | Catégorie de risque | Mesure dans le projet | État |
 |---|---|---|
-| Contrôle d'accès défaillant | politiques par rôle vérifiées par l'API, accès refusé par défaut, accès limité à ses propres réservations, GUID | accès par défaut, GUID et réservations (celle d'un autre répond `404`) : fait ; rôle du responsable sur la programmation : fait (US 5.2, 04/11/2026) ; caissier en lecture seule sur le suivi des réservations : fait (US 5.1, 06/11/2026) ; contrôleur seul sur le contrôle des billets : fait (US 4.1, 07/11/2026) |
+| Contrôle d'accès défaillant | politiques par rôle vérifiées par l'API, accès refusé par défaut, accès limité à ses propres réservations, GUID | accès par défaut, GUID et réservations (celle d'un autre répond `404`) : fait ; rôle du responsable sur la programmation : fait (US 5.2, 04/11/2026) ; caissier en lecture seule sur le suivi des réservations : fait (US 5.1, 06/11/2026) ; contrôleur seul sur le contrôle des billets : fait (US 4.1, 07/11/2026) ; achat réservé au spectateur : fait (07/11/2026) |
 | Défaillances cryptographiques | mots de passe hachés et salés, HTTPS | Fait (HTTPS par CloudFront sur la recette) |
 | Injection (SQL) | requêtes EF Core paramétrées, aucun SQL construit par concaténation | Fait |
 | Injection (XSS) | échappement automatique des affichages par Angular | Fait |
@@ -97,7 +98,7 @@ Détail par environnement : [environnements](../deployment/environments.md#secre
 
 ## Vérification
 
-- Tests automatisés des règles d'accès : un appel sans session reçoit `401`, un rôle insuffisant reçoit `403` : `401` testé (US 2.1 et 2.3) ; `403` testé pour un spectateur et un caissier sur la programmation (US 5.2), et pour un spectateur sur le suivi des réservations (US 5.3) ; `200` testé pour le caissier sur le suivi (US 5.1) ; `403` testé pour un spectateur, un caissier et un responsable sur le contrôle des billets (US 4.1).
+- Tests automatisés des règles d'accès : un appel sans session reçoit `401`, un rôle insuffisant reçoit `403` : `401` testé (US 2.1 et 2.3) ; `403` testé pour un spectateur et un caissier sur la programmation (US 5.2), et pour un spectateur sur le suivi des réservations (US 5.3) ; `200` testé pour le caissier sur le suivi (US 5.1) ; `403` testé pour un spectateur, un caissier et un responsable sur le contrôle des billets (US 4.1), et pour le caissier, le contrôleur et le responsable sur l'achat (07/11/2026).
 - Analyse SonarCloud à chaque Pull Request, points sensibles de sécurité examinés (voir [qualité du code](../quality/code-quality.md)).
 - La [Definition of Done](https://github.com/Grand-Cinema-Studi/grand-cinema-docs/issues/24) impose, pour chaque story : mots de passe hachés, aucune donnée de carte stockée, données personnelles traitées selon le RGPD.
 - Avant le premier festival, un test d'intrusion par un prestataire est recommandé (hors budget du MVP, Bloc 2).

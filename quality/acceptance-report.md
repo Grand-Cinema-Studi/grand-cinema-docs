@@ -129,7 +129,7 @@ Les mots de passe sont dans le README du backend (« Données de démonstration 
 |---|---|---|---|---|---|---|---|---|
 | 5.1-1 | Par séance, places vendues en ligne et restantes | « Réservations », aujourd'hui | Pour chaque séance : vendues en ligne, restantes ; la séance de 3.1-1 compte 2 places en ligne | `cashier@` | manuelle | | | [B #62](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/62), [F #22](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/22) |
 | 5.1-2 | Accès en lecture seule | Parcourir la page | Aucun bouton d'action ; l'API ne lui ouvre aucune écriture | `cashier@` | manuelle | | | [B #62](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/62) |
-| 5.1-3 | Pas d'accès à la programmation ni à l'analyse | En-tête ; puis ouvrir `/programming` à la main | Pas de lien « Programmation » ; `/programming` ramène à l'accueil | `cashier@` | manuelle | | | [B #62](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/62), [F #22](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/22) |
+| 5.1-3 | Pas d'accès à la programmation ni à l'analyse | En-tête ; puis ouvrir `/programming` à la main | Pas de lien « Programmation » ; `/programming` ramène au suivi des réservations (sa page, depuis le 07/11/2026) | `cashier@` | manuelle | | | [B #62](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/62), [F #22](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/22) |
 
 ### US 5.2 – Gérer la programmation
 
@@ -138,7 +138,7 @@ Les mots de passe sont dans le README du backend (« Données de démonstration 
 | 5.2-1 | Séance créée (film, salle, date, heure) visible en consultation publique | « Programmation », ajouter une séance demain à 10 h ; ouvrir l'accueil à la date de demain | La séance apparaît dans la programmation publique | `manager@` | manuelle | | | [B #51](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/51), [F #16](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/16) |
 | 5.2-2 | Séance modifiée ou supprimée : consultation publique à jour | Déplacer la séance à 11 h, puis l'annuler | L'accueil montre 11 h, puis plus de séance | `manager@` | manuelle | | | [B #51](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/51), [F #16](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/16) |
 | 5.2-3 | Séance avec réservations : avertissement avant de valider | Modifier la séance de 3.1-1 | Avertissement avec le nombre de places prises, confirmation demandée | `manager@` | manuelle | | | [B #51](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/51), [F #16](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/16) |
-| 5.2-4 | Seuls les profils autorisés | Avec `client@`, `cashier@` et `inspector@` : ouvrir `/programming` | Retour à l'accueil (et `403` de l'API) | `client@`, `cashier@`, `inspector@` | manuelle | | | [B #51](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/51) |
+| 5.2-4 | Seuls les profils autorisés | Avec `client@`, `cashier@` et `inspector@` : ouvrir `/programming` | `client@` revient à l'accueil ; `cashier@` et `inspector@` reviennent à leur page ; `403` de l'API dans tous les cas | `client@`, `cashier@`, `inspector@` | manuelle | | | [B #51](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/51) |
 
 ### US 5.3 – Suivre les réservations
 
@@ -146,6 +146,16 @@ Les mots de passe sont dans le README du backend (« Données de démonstration 
 |---|---|---|---|---|---|---|---|---|
 | 5.3-1 | Par séance, places vendues et capacité de la salle | « Réservations », aujourd'hui, puis une autre date | Vendues (en ligne, au guichet), capacité, taux de remplissage | `manager@` | manuelle | | | [B #55](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/55), [F #20](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/20) |
 | 5.3-2 | Données conservées pour l'analyse future (US 5.4) | Sur le serveur : les réservations payées et expirées des jours passés sont toujours en base, avec leurs dates (`CreatedAt`, `PaidAt`) | Les lignes existent ; rien n'est supprimé à la fin d'une séance | — | base | | | [B #55](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/55) |
+
+## Ajustements des droits par rôle (décision du Product Owner, 07/11/2026)
+
+Hors critères des user stories : chaque rôle n'ouvre que les pages de son métier, et seul le spectateur achète (tableau des droits de la [sécurité](../security/security.md)).
+
+| N° | Règle | Scénario | Attendu | Compte | Preuve | Date | Résultat | PR |
+|---|---|---|---|---|---|---|---|---|
+| A-1 | Seul le spectateur achète | Avec le jeton de `cashier@`, `inspector@` puis `manager@` : `POST /api/reservations` (Swagger ou `curl`) | `403` pour les trois ; `201` pour `client@` | `cashier@`, `inspector@`, `manager@`, `client@` | manuelle | | | B #… _(à reporter)_ |
+| A-2 | Le caissier et le contrôleur n'ouvrent que leurs pages | Après la connexion ; puis « Grand Cinéma », `/` et `/movies` | Arrivée et retour sur « Réservations » (`cashier@`), « Contrôle » (`inspector@`) ; « Mon compte » et les pages légales s'ouvrent | `cashier@`, `inspector@` | manuelle | | | F #… _(à reporter)_ |
+| A-3 | Achat proposé seulement au visiteur et au spectateur | En-tête (ordinateur et téléphone) ; fiche d'un film, choisir une séance | Pas de « Acheter un billet » pour le personnel ; le responsable voit « La réservation en ligne est réservée aux spectateurs. » | `manager@`, `cashier@`, `inspector@` | manuelle | | | F #… _(à reporter)_ |
 
 ## Anomalies relevées pendant la recette
 
@@ -164,7 +174,8 @@ Chaque anomalie est une issue `bug` du dépôt de la cause, rattachée au Projec
 | Epic 3 (US 3.1, 3.2) | 7 | | | |
 | Epic 4 (US 4.1) | 4 | | | |
 | Epic 5 (US 5.1, 5.2, 5.3) | 9 | | | |
-| **Total** | **43** | | | |
+| Ajustements des droits | 3 | | | |
+| **Total** | **46** | | | |
 
 ## Décision du Product Owner
 
