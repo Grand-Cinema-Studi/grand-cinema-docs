@@ -106,9 +106,9 @@ Les mots de passe sont dans le README du backend (« Données de démonstration 
 
 | N° | Critère | Scénario | Attendu | Compte | Preuve | Date | Résultat | PR |
 |---|---|---|---|---|---|---|---|---|
-| 3.2-1 | Paiement confirmé : billet avec QR code unique, film, séance, salle, nombre de places | Après 3.1-1 : la page de la réservation | Film, date et heure, salle, « 2 places : … », QR code | `client@` | manuelle | | | B #… , F #… _(à reporter)_ |
-| 3.2-2 | Billet accessible depuis mon compte | « Mon compte », « Mes billets », « Voir le billet » | La réservation payée est listée et rouvre le billet | `client@` | manuelle | | | B #… , F #… _(à reporter)_ |
-| 3.2-3 | Paiement échoué : aucun billet | Après un paiement refusé (3.1-2, avant le second essai) : « Mes billets » | Aucun billet pour cette réservation | `client@` | manuelle | | | B #… _(à reporter)_ |
+| 3.2-1 | Paiement confirmé : billet avec QR code unique, film, séance, salle, nombre de places | Après 3.1-1 : la page de la réservation | Film, date et heure, salle, « 2 places : … », QR code | `client@` | manuelle | | | [B #63](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/63), [F #24](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/24) |
+| 3.2-2 | Billet accessible depuis mon compte | « Mon compte », « Mes billets », « Voir le billet » | La réservation payée est listée et rouvre le billet | `client@` | manuelle | | | [B #63](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/63), [F #24](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/24) |
+| 3.2-3 | Paiement échoué : aucun billet | Après un paiement refusé (3.1-2, avant le second essai) : « Mes billets » | Aucun billet pour cette réservation | `client@` | manuelle | | | [B #63](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/63) |
 
 ## Epic 4 – Contrôle d'accès en salle
 
@@ -116,10 +116,10 @@ Les mots de passe sont dans le README du backend (« Données de démonstration 
 
 | N° | Critère | Scénario | Attendu | Compte | Preuve | Date | Résultat | PR |
 |---|---|---|---|---|---|---|---|---|
-| 4.1-1 | Billet valide pour la séance : accès autorisé, billet marqué « utilisé » | Le billet de 3.2-1 affiché sur l'ordinateur ; sur le téléphone, « Contrôle », la séance du billet, scanner | Bandeau vert « Accès autorisé », film et places | `inspector@` | manuelle | | | B #… , F #… _(à reporter)_ |
-| 4.1-2 | Billet déjà utilisé : refus explicite | Scanner le même billet après 4 secondes | Bandeau rouge « Billet déjà utilisé. » | `inspector@` | manuelle | | | B #… _(à reporter)_ |
-| 4.1-3 | Autre séance, QR code inconnu ou illisible : refus explicite | Choisir une autre séance et scanner ; scanner un QR code quelconque ; saisir `bonjour` | « Ce billet est pour une autre séance. » ; « QR code inconnu ou illisible. » | `inspector@` | manuelle | | | B #… , F #… _(à reporter)_ |
-| 4.1-4 | Retour visuel immédiat | Pendant 4.1-1 à 4.1-3 | Le bandeau change aussitôt après chaque scan | `inspector@` | manuelle | | | F #… _(à reporter)_ |
+| 4.1-1 | Billet valide pour la séance : accès autorisé, billet marqué « utilisé » | Le billet de 3.2-1 affiché sur l'ordinateur ; sur le téléphone, « Contrôle », la séance du billet, scanner | Bandeau vert « Accès autorisé », film et places | `inspector@` | manuelle | | | [B #64](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/64), [F #26](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/26) |
+| 4.1-2 | Billet déjà utilisé : refus explicite | Scanner le même billet après 4 secondes | Bandeau rouge « Billet déjà utilisé. » | `inspector@` | manuelle | | | [B #64](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/64) |
+| 4.1-3 | Autre séance, QR code inconnu ou illisible : refus explicite | Choisir une autre séance et scanner ; scanner un QR code quelconque ; saisir `bonjour` | « Ce billet est pour une autre séance. » ; « QR code inconnu ou illisible. » | `inspector@` | manuelle | | | [B #64](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/64), [F #26](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/26) |
+| 4.1-4 | Retour visuel immédiat | Pendant 4.1-1 à 4.1-3 | Le bandeau change aussitôt après chaque scan | `inspector@` | manuelle | | | [F #26](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/26) |
 
 ## Epic 5 – Administration et reporting
 
