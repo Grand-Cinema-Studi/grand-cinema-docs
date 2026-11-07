@@ -9,7 +9,8 @@ Les tests automatisés (192 au backend, 158 au frontend) prouvent les règles à
 | Élément | Valeur |
 |---|---|
 | Environnement | recette AWS (CloudFront, EC2, PostgreSQL), voir [environnements](../deployment/environments.md) |
-| Adresse | `https://<distribution>.cloudfront.net` _(à reporter)_ |
+| Adresse | https://d3oaw7zyh0jmbo.cloudfront.net |
+| Documentation de l'API | https://d3oaw7zyh0jmbo.cloudfront.net/swagger (activé sur la recette pendant la correction, désactivé par défaut : voir [environnements](../deployment/environments.md)) |
 | Version du backend | branche `dev`, commit `…` _(à reporter : `git log -1 --format=%h origin/dev`)_ |
 | Version du frontend | branche `dev`, commit `…` _(à reporter)_ |
 | Données | `seed-dev.sql` rechargé le `…` _(à reporter)_ |
