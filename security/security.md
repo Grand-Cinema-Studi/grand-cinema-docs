@@ -71,19 +71,21 @@ Détail par environnement : [environnements](../deployment/environments.md#secre
 - Le paiement exige l'acceptation des conditions générales de vente ; leur date et leur version sont enregistrées sur la réservation.
 - Clés Stripe en mode test sur tous les environnements du projet : user-secrets en local, Parameter Store en recette (`stripe-secret-key`, `stripe-webhook-secret`).
 
-## Billets (US 3.2, fait le 06/11/2026 ; contrôle : US 4.1)
+## Billets (US 3.2 et 4.1, faits les 06 et 07/11/2026)
 
 - Le QR code ne contient que le **code du billet** : 32 caractères hexadécimaux, 128 bits tirés par le générateur cryptographique de .NET (`RandomNumberGenerator`). Il ne se devine pas, et ne contient aucune donnée personnelle ni l'identifiant de la réservation, qui circule dans les adresses du site.
 - Aucun billet sans paiement confirmé : le code est écrit par la même instruction `UPDATE` que le passage à `Confirmed`, et seulement si la réservation attendait son paiement ; une notification Stripe reçue deux fois ne le change pas. Un index unique interdit deux billets de même code.
 - Un billet ne se lit que par son propriétaire : `404 ticket-not-found` pour un billet d'autrui, comme pour une réservation non payée, sans révéler lequel des deux.
 - Le QR code est dessiné par le navigateur, dans le gabarit Angular : aucune image stockée, aucun HTML injecté, la protection d'Angular contre le XSS reste active. Le billet d'une séance annulée n'affiche pas de QR code.
-- _À venir (US 4.1)_ : un billet ne pourra être validé qu'une fois, le scan enregistrant son utilisation.
+- Contrôle à l'entrée (US 4.1) : réservé au rôle `TicketInspector` (politique `ticket-inspection`), conformément au tableau des droits. Le billet est vérifié et marqué utilisé (`TicketUsedAt`) par **une seule instruction** `UPDATE … WHERE "TicketUsedAt" IS NULL` : PostgreSQL verrouille la ligne, et de deux scans simultanés du même billet à deux portes, un seul laisse entrer. Testé sur un vrai PostgreSQL avec deux scans en parallèle.
+- Un billet ne vaut que pour sa séance : le contrôleur choisit la séance qu'il contrôle, et un billet d'une autre séance est refusé. Un texte qui n'a pas la forme d'un code de billet (QR code d'autre chose) est refusé sans interroger la base.
+- La caméra du contrôleur est lue dans le navigateur (`jsqr`) : aucune image ne quitte le téléphone, seul le texte lu part vers l'API. La réponse ne contient aucune donnée personnelle (film, heure, salle, places).
 
 ## Correspondance avec le Top 10 de l'OWASP
 
 | Catégorie de risque | Mesure dans le projet | État |
 |---|---|---|
-| Contrôle d'accès défaillant | politiques par rôle vérifiées par l'API, accès refusé par défaut, accès limité à ses propres réservations, GUID | accès par défaut, GUID et réservations (celle d'un autre répond `404`) : fait ; rôle du responsable sur la programmation : fait (US 5.2, 04/11/2026) ; caissier en lecture seule sur le suivi des réservations : fait (US 5.1, 06/11/2026) ; contrôleur _(à venir, US 4.1)_ |
+| Contrôle d'accès défaillant | politiques par rôle vérifiées par l'API, accès refusé par défaut, accès limité à ses propres réservations, GUID | accès par défaut, GUID et réservations (celle d'un autre répond `404`) : fait ; rôle du responsable sur la programmation : fait (US 5.2, 04/11/2026) ; caissier en lecture seule sur le suivi des réservations : fait (US 5.1, 06/11/2026) ; contrôleur seul sur le contrôle des billets : fait (US 4.1, 07/11/2026) |
 | Défaillances cryptographiques | mots de passe hachés et salés, HTTPS | Fait (HTTPS par CloudFront sur la recette) |
 | Injection (SQL) | requêtes EF Core paramétrées, aucun SQL construit par concaténation | Fait |
 | Injection (XSS) | échappement automatique des affichages par Angular | Fait |
@@ -95,7 +97,7 @@ Détail par environnement : [environnements](../deployment/environments.md#secre
 
 ## Vérification
 
-- Tests automatisés des règles d'accès : un appel sans session reçoit `401`, un rôle insuffisant reçoit `403` : `401` testé (US 2.1 et 2.3) ; `403` testé pour un spectateur et un caissier sur la programmation (US 5.2), et pour un spectateur sur le suivi des réservations (US 5.3) ; `200` testé pour le caissier sur le suivi (US 5.1).
+- Tests automatisés des règles d'accès : un appel sans session reçoit `401`, un rôle insuffisant reçoit `403` : `401` testé (US 2.1 et 2.3) ; `403` testé pour un spectateur et un caissier sur la programmation (US 5.2), et pour un spectateur sur le suivi des réservations (US 5.3) ; `200` testé pour le caissier sur le suivi (US 5.1) ; `403` testé pour un spectateur, un caissier et un responsable sur le contrôle des billets (US 4.1).
 - Analyse SonarCloud à chaque Pull Request, points sensibles de sécurité examinés (voir [qualité du code](../quality/code-quality.md)).
 - La [Definition of Done](https://github.com/Grand-Cinema-Studi/grand-cinema-docs/issues/24) impose, pour chaque story : mots de passe hachés, aucune donnée de carte stockée, données personnelles traitées selon le RGPD.
 - Avant le premier festival, un test d'intrusion par un prestataire est recommandé (hors budget du MVP, Bloc 2).

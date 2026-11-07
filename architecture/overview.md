@@ -45,7 +45,7 @@ Découpage issu du Bloc 1, réalisé progressivement user story par user story :
 | Authentification | 2.1 | Fait (`POST /api/users`, `POST /api/tokens`, `GET /api/users/me`, `DELETE /api/users/me`) |
 | Réservation | 2.2, 2.3 | Fait (places restantes ; `POST`, `GET` et `DELETE /api/reservations`) |
 | Paiement | 3.1 | Fait (`POST /api/reservations/{id}/payment`, `POST /api/payments/stripe-webhook`), en mode test |
-| Billets | 3.2, 4.1 | Fait pour l'US 3.2 (`GET /api/reservations/{id}/ticket`, `GET /api/users/me/tickets`) : code du billet tiré au paiement confirmé, QR code dessiné par le front ; contrôle (US 4.1) à venir |
+| Billets | 3.2, 4.1 | Fait pour l'US 3.2 (`GET /api/reservations/{id}/ticket`, `GET /api/users/me/tickets`) : code du billet tiré au paiement confirmé, QR code dessiné par le front ; contrôle à l'entrée fait pour l'US 4.1 (`/api/ticket-checks`, contrôleur seulement) : billet vérifié et marqué utilisé en une seule instruction SQL |
 | Administration | 5.1, 5.2, 5.3 | Fait (`/api/programming`, `GET /api/reservation-tracking`), réservé au personnel |
 
 ## Architecture du backend
