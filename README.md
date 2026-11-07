@@ -113,7 +113,7 @@ Règle : une Pull Request du front ou du back qui change l'architecture ou prend
 | Dépôt backend (ASP.NET Core, PostgreSQL) | https://github.com/Grand-Cinema-Studi/grand-cinema-backend |
 | Dépôt frontend (Angular) | https://github.com/Grand-Cinema-Studi/grand-cinema-frontend |
 | Suivi du projet (Project GitHub n° 3) | https://github.com/orgs/Grand-Cinema-Studi/projects/3 |
-| Application déployée | _À venir_ |
+| Application déployée | https://d3oaw7zyh0jmbo.cloudfront.net |
 
 ## Contribuer
 
