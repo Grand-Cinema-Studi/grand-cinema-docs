@@ -114,6 +114,7 @@ Règle : une Pull Request du front ou du back qui change l'architecture ou prend
 | Dépôt frontend (Angular) | https://github.com/Grand-Cinema-Studi/grand-cinema-frontend |
 | Suivi du projet (Project GitHub n° 3) | https://github.com/orgs/Grand-Cinema-Studi/projects/3 |
 | Application déployée | https://d3oaw7zyh0jmbo.cloudfront.net |
+| Maquettes (Figma, faites avant le développement) | https://www.figma.com/design/STWs0Pj1CyWqE5uiwkUaf6/Grand-Cinema-Studi?node-id=0-1&t=JxUrvrVWBIhG6gBz-1 |
 | Documentation de l'API (Swagger, activé en recette pour l'évaluation) | https://d3oaw7zyh0jmbo.cloudfront.net/swagger |
 
 ## Contribuer
