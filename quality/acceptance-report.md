@@ -13,7 +13,7 @@ Les tests automatisés (192 au backend, 158 au frontend) prouvent les règles à
 | Documentation de l'API | https://d3oaw7zyh0jmbo.cloudfront.net/swagger (activé sur la recette pendant la correction, désactivé par défaut : voir [environnements](../deployment/environments.md)) |
 | Version du backend | branche `dev`, commit `…` _(à reporter : `git log -1 --format=%h origin/dev`)_ |
 | Version du frontend | branche `dev`, commit `…` _(à reporter)_ |
-| Données | `seed-dev.sql` rechargé le `…` _(à reporter)_ |
+| Données | données de démonstration remises à zéro par `deploy/reset-demo-data.sh` le `…` _(à reporter ; jamais `seed-dev.sql` seul : voir le [bug 0002](bugs/0002-demo-screenings-overlap.md))_ |
 | Paiement | Stripe en mode test : carte acceptée `4242 4242 4242 4242`, carte refusée `4000 0000 0000 0002` (date future, code quelconque) |
 | Appareils | un ordinateur (Chrome, 1440 px) et un téléphone (navigateur mobile) |
 | Recette menée par | Slimane Smahi, dans le rôle du Product Owner |
@@ -163,7 +163,7 @@ Chaque anomalie est une issue `bug` du dépôt de la cause, rattachée au Projec
 
 | Critère | Issue | Gravité | Correctif | Rejoué le | Résultat |
 |---|---|---|---|---|---|
-| | | | | | |
+| 1.1-1, 5.2-1 (données de démonstration) : Alien et Ratatouille à 22 h 30 en Salle 1 le 08/11/2026 | B #… _(à reporter)_ | Mineure | Séances de démonstration supprimées avant chaque rechargement, contrôle des chevauchements : `deploy/reset-demo-data.sh` ([bug 0002](bugs/0002-demo-screenings-overlap.md)) | 08/11/2026 | Conforme |
 
 ## Synthèse
 

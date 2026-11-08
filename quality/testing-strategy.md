@@ -177,4 +177,5 @@ Ces environnements sont ceux du Bloc 2. Pour le projet, seule la recette est en 
 
 - L'issue est ouverte dans le dépôt où se trouve la cause du bug (backend ou frontend) : le correctif, sa Pull Request et l'issue sont au même endroit, et la Pull Request la ferme avec `Fixes #<numéro>`. Les US et les epics, elles, sont dans le dépôt de documentation. Exemples : les issues #57 à #61 du backend (double vente de la dernière place, limite de 10 places contournée avec plusieurs onglets, séances déjà commencées proposées, erreur 500 sur une heure avec fuseau, carrousel vide le soir).
 - Une anomalie corrigée commence par un test qui la reproduit (rouge), puis le correctif (vert) : le test empêche qu'elle revienne.
-- Les anomalies analysées en détail sont documentées dans [`bugs/`](bugs/).
+- Les anomalies analysées en détail sont documentées dans [`bugs/`](bugs/) : la double vente de la dernière place ([0001](bugs/0001-double-booking.md)) et deux films dans la même salle au même moment sur la recette, venus du rechargement des données de démonstration ([0002](bugs/0002-demo-screenings-overlap.md)).
+- Les données de démonstration sont écrites en SQL, sans passer par l'API : leur remise à zéro sur la recette (`deploy/reset-demo-data.sh`) se termine par le contrôle de la règle de la salle libre, et échoue s'il reste un chevauchement.
