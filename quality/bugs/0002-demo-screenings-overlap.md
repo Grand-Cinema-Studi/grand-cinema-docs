@@ -1,6 +1,6 @@
 # Bug 0002 – Deux films dans la même salle à la même heure (données de démonstration de la recette)
 
-- Statut : **corrigé le 08/11/2026** (scripts `deploy/reset-demo-data.sh` et `docs/database/seed-remove-overlaps.sql`, journal du backend, étape 27 bis) ; seconde cause à vérifier sur la recette après la fusion
+- Statut : **corrigé le 08/11/2026** (scripts `deploy/reset-demo-data.sh` et `docs/database/seed-remove-overlaps.sql`, journal du backend, étape 27 bis)  ; vérifié sur la recette le 08/11/2026
 - Gravité : mineure (données de démonstration seulement ; l'API refuse ce cas à toute création ou modification de séance), mais visible du public et du jury sur la recette
 - Concerne : backend, données de démonstration (`docs/database/seed-dev.sql`) et procédure de rechargement sur la recette
 - Trouvé : en recette, le 08/11/2026, en consultant la programmation du jour
@@ -62,7 +62,7 @@ Avant le correctif : un résultat supérieur à 0 (dont Alien et Ratatouille, Sa
 ## Validation
 
 - 08/11/2026, premier lancement sur la recette : le 08/11 à 22 h 30, la Salle 1 n'a plus qu'un film ; programmation, connexion des quatre comptes et réservation vérifiées. Mais le contrôle final trouve 10 chevauchements entre séances de démonstration (seconde cause, ci-dessus) : le script échoue comme prévu, au lieu de laisser une recette incohérente.
-- Avec `seed-remove-overlaps.sql` : 0 chevauchement sur PostgreSQL 16 (08/11/2026) ; sur la recette, contrôle à 0 le `…` _(à reporter après la fusion)_.
+- Avec `seed-remove-overlaps.sql` : 0 chevauchement sur PostgreSQL 16 (08/11/2026). Sur la recette, le 08/11/2026, script et données du commit `d97767f` de `dev` : 127 films, 2 104 séances à venir (les 10 séances de 22 h 30 en Salle 9 qui chevauchaient Amadeus sont retirées), « no room holds two screenings at the same time ».
 - Une séance créée à la main dans l'écran Programmation peut tomber sur un créneau du nouveau programme : le script le signale (contrôle supérieur à 0) ; elle est alors annulée dans l'écran Programmation.
 
 ## Pour aller plus loin
