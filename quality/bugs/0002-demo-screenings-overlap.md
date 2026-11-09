@@ -4,7 +4,7 @@
 - Gravité : mineure (données de démonstration seulement ; l'API refuse ce cas à toute création ou modification de séance), mais visible du public et du jury sur la recette
 - Concerne : backend, données de démonstration (`docs/database/seed-dev.sql`) et procédure de rechargement sur la recette
 - Trouvé : en recette, le 08/11/2026, en consultant la programmation du jour
-- Liens : issue `bug` du dépôt backend #… _(à reporter)_, [procès-verbal de recette](../acceptance-report.md#anomalies-relevées-pendant-la-recette)
+- Liens : issue `bug` [#79](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/issues/79) du dépôt backend (créée le 09/11/2026, après le correctif, puis fermée), Pull Requests #68, #69 et #71 du backend, [procès-verbal de recette](../acceptance-report.md#anomalies-relevées-pendant-la-recette)
 
 ## Description
 
