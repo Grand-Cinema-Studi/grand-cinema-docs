@@ -230,7 +230,22 @@ Dépendances, le même jour :
 - `dotnet list package --vulnerable` : aucun paquet vulnérable dans les 8 projets du backend (4 de code, 4 de tests) ;
 - `npm audit --omit=dev` : 0 vulnérabilité dans les dépendances livrées au navigateur (les outils de développement, comme Vitest ou ESLint, ne partent pas en production).
 
-Les 2 problèmes de maintenabilité du backend : _(à compléter : règle, fichier, décision et Pull Request, selon le traitement ci-dessus)_.
+Les 2 problèmes de maintenabilité du backend, traités avant le gel :
+
+| Règle | Fichier | Décision |
+|---|---|---|
+| SYSLIB1045 : utiliser `GeneratedRegexAttribute` | `tests/GrandCinema.Domain.Tests/Entities/ReservationTests.cs` | **Corrigé** : le format du code du billet est vérifié sans expression régulière (`Length == 32`, `char.IsAsciiHexDigitLower`) ; le test reste indépendant de `Reservation.IsTicketCode` _(Pull Request à reporter)_ |
+| CA1862 : préférer `string.Equals(…, StringComparison.OrdinalIgnoreCase)` | `src/GrandCinema.Infrastructure/Persistence/Repositories/ProgrammingRepository.cs` | **Accepté**, raison écrite dans le code (`#pragma warning disable CA1862` autour de la seule requête) : la comparaison est dans une requête EF Core traduite en SQL ; les surcharges avec `StringComparison` n'y sont pas traduites et échoueraient à l'exécution. `upper()` des deux côtés est traduit, et le test d'intégration de la casse le vérifie sur PostgreSQL. Un simple statut « Accepté » dans SonarCloud ne suffisait pas : le problème est revenu quand la requête a été déplacée (US 5.6, étape « modifier et archiver ») |
+
+**Couverture du frontend** : de 98,4 % (27/10/2026) à 93,5 %, sans test retiré. Les fichiers les moins couverts sont les frontières avec le navigateur, remplacées par une doublure dans les tests unitaires et vérifiées à la main sur la recette :
+
+| Fichier | Couverture du nouveau code | Pourquoi |
+|---|---|---|
+| `ticket-check/ticket-scanner/qr-frame-reader.ts` | 30,4 % | lit une image de la caméra sur un canevas : jsdom, l'environnement des tests, n'a ni caméra ni canevas. Vérifié à la webcam, puis au téléphone sur la recette (US 4.1, 07/11/2026) |
+| `core/navigation/external-navigation.ts` | 57,1 % | envoie le navigateur vers un autre site (page de paiement de Stripe) ; une vraie navigation quitterait la page de test, elle est donc remplacée par une doublure. Vérifié à chaque paiement de recette (US 3.1) |
+| `schedule/schedule-page/schedule-page.ts` | 78,6 % | une ligne et deux conditions non couvertes sur le nouveau code |
+
+Ces fichiers ne sont pas exclus de la mesure : le chiffre reste honnête, et la raison est écrite ici. La couverture du nouveau code reste au-dessus du seuil du Quality Gate (91,9 % pour 80 % exigés).
 
 ## Autres contrôles
 
