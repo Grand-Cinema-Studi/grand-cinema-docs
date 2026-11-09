@@ -16,6 +16,8 @@ SonarCloud (désormais « SonarQube Cloud ») est la version hébergée de Sonar
 | Contenu | bugs, vulnérabilités, points sensibles de sécurité (*security hotspots*), mauvaises pratiques (*code smells*), duplication, couverture des tests |
 | Installation | aucun serveur à héberger, contrairement à SonarQube |
 
+Tableau de bord public, consultable sans compte : [les deux projets](https://sonarcloud.io/organizations/grand-cinema-studi/projects) ; [backend](https://sonarcloud.io/project/overview?id=Grand-Cinema-Studi_grand-cinema-backend) ; [frontend](https://sonarcloud.io/project/overview?id=Grand-Cinema-Studi_grand-cinema-frontend).
+
 ## Branchement
 
 ### Backend
@@ -220,7 +222,7 @@ Dernière vérification de la version à livrer, avant le gel du MVP (14/11/2026
 | Quality Gate | passé | passé |
 | Lignes de code | environ 4 100 | environ 4 100 |
 | Sécurité, fiabilité | A, 0 problème | A, 0 problème |
-| Maintenabilité | A, 2 problèmes | A, 0 problème |
+| Maintenabilité | A, 2 problèmes, traités le jour même (ci-dessous) : 0 problème ouvert | A, 0 problème |
 | Points sensibles de sécurité examinés | 100 % | 100 % |
 | Couverture | **97,1 %** (236 tests) | **93,5 %** (175 tests) |
 | Duplication | 0,0 % | 0,0 % |
@@ -234,8 +236,10 @@ Les 2 problèmes de maintenabilité du backend, traités avant le gel :
 
 | Règle | Fichier | Décision |
 |---|---|---|
-| SYSLIB1045 : utiliser `GeneratedRegexAttribute` | `tests/GrandCinema.Domain.Tests/Entities/ReservationTests.cs` | **Corrigé** : le format du code du billet est vérifié sans expression régulière (`Length == 32`, `char.IsAsciiHexDigitLower`) ; le test reste indépendant de `Reservation.IsTicketCode` _(Pull Request à reporter)_ |
-| CA1862 : préférer `string.Equals(…, StringComparison.OrdinalIgnoreCase)` | `src/GrandCinema.Infrastructure/Persistence/Repositories/ProgrammingRepository.cs` | **Accepté**, raison écrite dans le code (`#pragma warning disable CA1862` autour de la seule requête) : la comparaison est dans une requête EF Core traduite en SQL ; les surcharges avec `StringComparison` n'y sont pas traduites et échoueraient à l'exécution. `upper()` des deux côtés est traduit, et le test d'intégration de la casse le vérifie sur PostgreSQL. Un simple statut « Accepté » dans SonarCloud ne suffisait pas : le problème est revenu quand la requête a été déplacée (US 5.6, étape « modifier et archiver ») |
+| SYSLIB1045 : utiliser `GeneratedRegexAttribute` | `tests/GrandCinema.Domain.Tests/Entities/ReservationTests.cs` | **Corrigé** : le format du code du billet est vérifié sans expression régulière (`Length == 32`, `char.IsAsciiHexDigitLower`) ; le test reste indépendant de `Reservation.IsTicketCode` (Pull Request #77) |
+| CA1862 : préférer `string.Equals(…, StringComparison.OrdinalIgnoreCase)` | `src/GrandCinema.Infrastructure/Persistence/Repositories/ProgrammingRepository.cs` | **Accepté**, raison écrite dans le code (`#pragma warning disable CA1862` autour de la seule requête) : la comparaison est dans une requête EF Core traduite en SQL ; les surcharges avec `StringComparison` n'y sont pas traduites et échoueraient à l'exécution. `upper()` des deux côtés est traduit, et le test d'intégration de la casse le vérifie sur PostgreSQL (Pull Request #77). Un simple statut « Accepté » dans SonarCloud ne suffisait pas : le problème est revenu quand la requête a été déplacée (US 5.6, étape « modifier et archiver ») |
+
+Après la Pull Request #77 (09/11/2026) : **0 problème ouvert** au backend comme au frontend.
 
 **Couverture du frontend** : de 98,4 % (27/10/2026) à 93,5 %, sans test retiré. Les fichiers les moins couverts sont les frontières avec le navigateur, remplacées par une doublure dans les tests unitaires et vérifiées à la main sur la recette :
 
