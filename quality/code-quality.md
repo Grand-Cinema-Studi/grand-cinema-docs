@@ -211,6 +211,27 @@ Pull Request `feature/us-3-1-stripe-payment`. Premier passage : Quality Gate **r
 
 Second passage : Quality Gate **passé**. Total : 139 tests.
 
+### Contrôle avant le gel (09/11/2026)
+
+Dernière vérification de la version à livrer, avant le gel du MVP (14/11/2026) : les 12 user stories sont fusionnées dans `dev`.
+
+| Mesure (tout le code, branche `dev`) | Backend | Frontend |
+|---|---|---|
+| Quality Gate | passé | passé |
+| Lignes de code | environ 4 100 | environ 4 100 |
+| Sécurité, fiabilité | A, 0 problème | A, 0 problème |
+| Maintenabilité | A, 2 problèmes | A, 0 problème |
+| Points sensibles de sécurité examinés | 100 % | 100 % |
+| Couverture | **97,1 %** (236 tests) | **93,5 %** (175 tests) |
+| Duplication | 0,0 % | 0,0 % |
+
+Dépendances, le même jour :
+
+- `dotnet list package --vulnerable` : aucun paquet vulnérable dans les 8 projets du backend (4 de code, 4 de tests) ;
+- `npm audit --omit=dev` : 0 vulnérabilité dans les dépendances livrées au navigateur (les outils de développement, comme Vitest ou ESLint, ne partent pas en production).
+
+Les 2 problèmes de maintenabilité du backend : _(à compléter : règle, fichier, décision et Pull Request, selon le traitement ci-dessus)_.
+
 ## Autres contrôles
 
 | Contrôle | Ce qu'il apporte | État |
@@ -220,6 +241,7 @@ Second passage : Quality Gate **passé**. Total : 139 tests.
 | `dotnet format --verify-no-changes` | formatage identique sur tous les postes, vérifié par la CI à chaque Pull Request ; mise en forme initiale de tout le code dans un commit `style:` séparé | Fait (25/10/2026) |
 | `.editorconfig` | réglages des règles par dossier (CA1861 désactivée dans les tests, avec la raison) | Fait (25/10/2026) |
 | Dependabot | alerte, et propose une mise à jour, quand une dépendance (paquet NuGet, action GitHub, image Docker) a une faille connue ou une nouvelle version | Fait (25/10/2026) |
+| `dotnet list package --vulnerable` | contrôle, avant une livraison, qu'aucun paquet NuGet n'a de faille connue | Fait (09/11/2026, aucun paquet vulnérable) |
 
 Frontend :
 
@@ -231,3 +253,4 @@ Frontend :
 | `.gitattributes` (`eol=lf`) | mêmes fins de ligne sur Windows et sous Linux : `format:check` donne le même résultat partout | Fait (27/10/2026) |
 | Revue de chaque Pull Request | relecture du diff selon les [standards de code](../development/coding-standards.md#revue-de-code) | Fait |
 | Dependabot | mises à jour hebdomadaires des paquets npm et des actions GitHub, proposées vers `dev` | Fait (20/10/2026) |
+| `npm audit --omit=dev` | contrôle, avant une livraison, qu'aucune dépendance livrée au navigateur n'a de faille connue | Fait (09/11/2026, 0 vulnérabilité) |

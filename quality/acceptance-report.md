@@ -2,7 +2,7 @@
 
 Ce document trace la recette du MVP : chaque critère d'acceptation des 12 user stories est rejoué sur l'environnement de recette, avec les comptes de démonstration, puis validé ou refusé par le Product Owner. C'est la preuve du point de la [Definition of Done](https://github.com/Grand-Cinema-Studi/grand-cinema-docs/issues/24) « déployée sur l'environnement de recette et validée par le Product Owner », et du plan de recette de la [stratégie de tests](testing-strategy.md) exécuté.
 
-Les tests automatisés (235 au backend, 175 au frontend) prouvent les règles à chaque Pull Request. Cette recette vérifie autre chose : le produit déployé, tel qu'un utilisateur le voit, de bout en bout.
+Les tests automatisés (236 au backend, 175 au frontend) prouvent les règles à chaque Pull Request. Cette recette vérifie autre chose : le produit déployé, tel qu'un utilisateur le voit, de bout en bout.
 
 ## Cadre de la recette
 
