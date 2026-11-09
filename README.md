@@ -78,6 +78,7 @@ Les éléments marqués _(à venir)_ dans les documents sont décidés mais pas 
 | [Qualité du code](quality/code-quality.md) | Quels contrôles automatiques, et quels seuils bloquent une fusion ? |
 | [Procès-verbal de recette du MVP](quality/acceptance-report.md) | Chaque critère d'acceptation a-t-il été vérifié sur la recette, et le Product Owner a-t-il accepté le MVP ? |
 | [Bug 0001 – Double réservation](quality/bugs/0001-double-booking.md) | Comment la même place pourrait-elle être vendue deux fois, et comment l'empêcher ? |
+| [Bug 0002 – Séances de démonstration qui se chevauchent](quality/bugs/0002-demo-screenings-overlap.md) | Pourquoi deux films étaient-ils programmés dans la même salle au même moment sur la recette, et comment l'éviter ? |
 
 ### Sécurité
 

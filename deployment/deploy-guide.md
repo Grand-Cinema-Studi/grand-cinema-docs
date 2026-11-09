@@ -93,7 +93,7 @@ Un nom propre au commit, et `sudo` pour le téléchargement aussi : le 03/11/202
 #### Ce que fait le script
 
 1. Il télécharge le fichier Docker Compose **du commit déployé**.
-2. Il lit les secrets dans Parameter Store (base, jetons, clés Stripe de test, adresse du front) et écrit le fichier `.env` du serveur, lisible par `root` seul. Docker Compose refuse de démarrer si l'un d'eux manque (`${VAR:?}`).
+2. Il lit les secrets et réglages dans Parameter Store (base, jetons, clés Stripe de test, adresse du front, nom du bucket des affiches) et écrit le fichier `.env` du serveur, lisible par `root` seul. Docker Compose refuse de démarrer si l'un d'eux manque (`${VAR:?}`).
 3. Il télécharge l'image et ne recrée que les conteneurs qui changent (en général l'API) ; la base continue de tourner.
 4. Le conteneur `migrate` applique les migrations ; **l'API ne démarre que si elles ont réussi**.
 5. Il attend que `/health` réponde ; sinon, il affiche les journaux des migrations et de l'API, et échoue.
@@ -144,6 +144,8 @@ Puis, dans un navigateur : la page d'accueil du front (la nouvelle version s'aff
 ### Sauvegarde
 
 En recette : une tâche quotidienne (`/etc/cron.daily/grandcinema-backup`) exporte la base avec `pg_dump`, compressée, dans `/opt/grandcinema/backups` ; les sept dernières sont conservées. En production (cible) : sauvegardes automatiques de RDS.
+
+Les affiches des films (US 5.6) ne sont pas dans la base : elles sont dans le bucket S3, dont la durabilité est gérée par AWS. Une base restaurée retrouve donc ses affiches, puisque l'API n'en supprime jamais (elle n'en a pas le droit).
 
 Limite : en recette, ces sauvegardes sont sur le disque du serveur. Elles protègent d'une erreur de manipulation, pas de la perte du serveur. Avant toute opération risquée et avant la fin de la période gratuite d'AWS, la dernière sauvegarde est récupérée hors du serveur.
 

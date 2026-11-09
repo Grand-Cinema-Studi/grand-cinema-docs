@@ -9,13 +9,18 @@ Tout ce qui est nommé dans le code est en **anglais** : projets, classes, propr
 | Programmation (films et horaires d'un jour) | `Schedule` | `GET /api/schedule` |
 | Films à l'affiche (au moins une séance à venir) | `MoviesShowing` | |
 | Film | `Movie` | table `Movies` |
+| Catalogue des films (films non archivés, proposés à la programmation) | `movies` de `GET /api/programming` | US 5.6 |
+| Affiche | `PosterUrl` | image TMDB pour les films de démonstration, `/posters/<GUID>` pour un film ajouté par le responsable (US 5.6) |
+| Genre | `Genre`, liste `MovieGenres` | un des 17 genres acceptés (US 5.6) |
+| Archiver un film | `ArchivedAt` | le film n'est plus proposé à la programmation ; il n'est jamais supprimé (US 5.6) |
+| Séance annulée | `CancelledAt` | la séance disparaît des lectures, ses ventes restent (US 5.2) |
 | Salle | `Room` | table `Rooms` ; `Capacity` = nombre maximal de places |
 | Place | `Seat` | table `Seats` ; repérée par un rang (`Row`) et un numéro (`Number`) |
 | Séance | `Screening` | table `Screenings` ; `StartsAt` à l'heure locale du cinéma |
 | Réservation | `Reservation` | table `Reservations` |
 | Place réservée | `ReservedSeat` | table `ReservedSeats` ; une ligne par place d'une réservation |
 | Utilisateur | `User` | table `Users` |
-| Places restantes | `RemainingSeats` | US 2.2, à venir |
+| Places restantes | `RemainingSeats` | US 2.2 |
 
 ## Rôles des utilisateurs (`UserRole`)
 

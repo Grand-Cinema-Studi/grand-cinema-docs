@@ -9,6 +9,7 @@ Ce document applique l'architecture du Bloc 1 et la stratégie des Blocs 2 (envi
 ```text
 Navigateur ── HTTPS ──► CloudFront (CDN)
                           ├─ fichiers du front ──────────► S3 (hébergement statique)  : Front-end (Angular)
+                          ├─ /posters/* ─────────────────► S3 (affiches des films)    : ajout de l'US 5.6
                           └─ /api/* ──► répartiteur de charge ──► EC2 + Auto Scaling   : API Back-end
                                                                     ├─► RDS PostgreSQL
                                                                     ├─► S3 (billets et QR codes)
@@ -23,6 +24,7 @@ CloudWatch   supervision : métriques, journaux, alertes
 | API Back-end (ASP.NET Core) | règles métier, sécurité, accès aux données | dépôt `grand-cinema-backend`, son propre pipeline : tests, image Docker, déploiement sur EC2 |
 | PostgreSQL | utilisateurs, films, salles, places, séances, réservations | RDS en production |
 | Billets dématérialisés | code du billet en base (`TicketCode`) ; le QR code est dessiné par le navigateur, aucun fichier stocké | US 3.2 ; pas de bucket S3 (écart avec la cible, voir plus bas) |
+| Affiches des films | images envoyées par le responsable : un bucket S3 privé, lu par CloudFront seule, alimenté par l'API | US 5.6 (ajoutée au MVP le 07/11/2026) ; absent du Bloc 1, qui ne prévoyait pas d'ajouter des films depuis l'application |
 | Stripe | paiement par carte ; aucune donnée de carte ne transite par l'application | US 3.1, en mode test sur la recette |
 | CloudWatch | supervision et alertes | voir « Supervision » |
 
@@ -47,7 +49,10 @@ La démonstration du projet est l'environnement de **recette**. C'est une **vers
 ```text
 Navigateur ── HTTPS ──► CloudFront (adresse *.cloudfront.net, sans nom de domaine)
                           ├─ fichiers du front ──► S3 (privé, accès réservé à CloudFront)
+                          ├─ /posters/* ─────────► S3 des affiches (privé, accès réservé à CloudFront)
                           └─ /api/*, /health, /swagger, /openapi/* ──► EC2, HTTP 80
+
+L'API (rôle IAM de l'instance) ── ajout de fichiers sous posters/ seulement ──► S3 des affiches
 
 EC2 t3.micro (Amazon Linux 2023 + Docker Compose), région Paris (eu-west-3)
    api      image du backend (GitHub Container Registry)
@@ -65,10 +70,13 @@ SSM Session Manager   accès au serveur sans SSH ni port d'administration ouvert
 | Base | RDS PostgreSQL (sauvegardes et mises à jour gérées) | PostgreSQL en conteneur sur le serveur | budget ; seule la chaîne de connexion change pour passer à RDS |
 | HTTPS | de bout en bout | entre le navigateur et CloudFront ; HTTP entre CloudFront et le serveur | pas de nom de domaine ni de répartiteur de charge ; le serveur n'accepte que les adresses de CloudFront (liste de préfixes gérée par AWS) |
 | Supervision | CloudWatch | alarmes CloudWatch de base _(à venir)_ | voir « Supervision » |
+| Affiches des films | S3 + CloudFront (ajout de l'US 5.6) | S3 privé + CloudFront | aucun écart |
 | Billets | S3 | aucun stockage : code du billet en base, QR code dessiné par le navigateur (US 3.2) | rien à stocker : le QR code n'est qu'une autre écriture du code du billet ; un fichier par billet aurait coûté du stockage, des droits d'accès et un risque de fuite, sans rien apporter |
 
 - **Une seule adresse** pour le front et l'API : CloudFront transmet `/api/*` au serveur (cache désactivé, en-tête `Authorization` et toutes les méthodes HTTP transmis). Le navigateur appelle `/api/...` sur le site qu'il affiche, donc **pas de CORS** à configurer.
 - **Routage Angular** : une CloudFront Function (`spa-rewrite`, événement *viewer request*), attachée au **seul comportement par défaut**, sert `index.html` pour toute URL sans extension (`/schedule`, `/account`), pour que les routes de l'application fonctionnent au rechargement. Les « réponses d'erreur personnalisées » de CloudFront ne sont **pas** utilisées : elles s'appliquent à toute la distribution, et transformeraient les `403` et `404` de l'API en page HTML avec un code `200`, ce qui casserait le format Problem Details des [conventions d'API](../api/api-conventions.md).
+- **Affiches des films** (US 5.6) : bucket `grand-cinema-recette-posters-2026`, privé (accès public bloqué, chiffrement SSE-S3), en origine de CloudFront avec un Origin Access Control ; sa politique ne donne la lecture qu'à la distribution de la recette. Le comportement `/posters/*` passe avant le comportement par défaut, en `GET` et `HEAD` seulement, avec le cache `CachingOptimized`, les en-têtes de sécurité (`SecurityHeadersPolicy`) et sans la fonction `spa-rewrite`. Chaque affiche a un nom nouveau et ne change jamais : l'API l'enregistre avec `Cache-Control: public, max-age=31536000, immutable`, et une nouvelle affiche est un nouveau fichier.
+- **Droits du serveur sur S3** : le rôle de l'instance (`grandcinema-ec2-role`) reçoit la seule action `s3:PutObject` sur `posters/*` (politique `grand-cinema-recette-posters-write`) ; l'API ne peut ni lire, ni lister, ni supprimer. Elle obtient ces droits par le service de métadonnées de l'instance : IMDSv2 obligatoire, limite de sauts à 2, car l'API tourne dans un conteneur Docker, un saut réseau plus loin que l'instance.
 - **Migrations** appliquées par le déploiement, avant de démarrer la nouvelle version de l'API, jamais au démarrage de l'API.
 - **Fuseau horaire** : `TZ=Europe/Paris` dans les conteneurs, pour que « aujourd'hui » soit le jour à Paris. Les séances sont enregistrées à l'heure du cinéma, les instants techniques (création, expiration du blocage) en UTC.
 - **Passage à la cible** : l'image de l'API ne change pas ; on ajoute le répartiteur de charge et l'Auto Scaling, et la chaîne de connexion pointe vers RDS.
@@ -82,12 +90,14 @@ Déployer, vérifier, revenir en arrière, sauvegarder : [guide de déploiement]
 |---|---|---|---|
 | Développement | fichier `.env`, ignoré par Git | user-secrets .NET, hors du dépôt | user-secrets .NET ; clés Stripe de test, notifications relayées par la Stripe CLI (`stripe listen`) |
 | Test (CI) | générés par Testcontainers | générée par Testcontainers | valeurs de test, jamais réutilisées ailleurs |
-| Recette | SSM Parameter Store (chiffré) | variable d'environnement `ConnectionStrings__Default`, construite au déploiement | SSM Parameter Store ; **clé Stripe de test** et secret des notifications de la destination Stripe de la recette ; adresse du front (`front-base-url`) |
+| Recette | SSM Parameter Store (chiffré) | variable d'environnement `ConnectionStrings__Default`, construite au déploiement | SSM Parameter Store ; **clé Stripe de test** et secret des notifications de la destination Stripe de la recette ; adresse du front (`front-base-url`) ; nom du bucket des affiches (`posters-bucket`, non secret) |
 | Production | SSM Parameter Store (chiffré) | idem | SSM Parameter Store ; **clé Stripe réelle**, contrôlée avant chaque mise en production |
 
 Aucun secret n'est versionné, ni dans les dépôts, ni dans les images Docker, ni dans GitHub. Les clés de production sont stockées hors du code, et leur présence est un critère de mise en production (voir le guide).
 
 Swagger est désactivé par défaut et s'active avec `Swagger__Enabled=true` (activé en développement et sur la recette pendant la correction).
+
+Le stockage des affiches se choisit par configuration (`Posters:Storage`) : `S3` par défaut, avec le nom du bucket lu dans Parameter Store au déploiement (`Posters__BucketName`) ; `Local` en développement, dans un dossier du poste (`posters-dev/`, ignoré par Git) servi par l'API. Aucun compte AWS n'est nécessaire pour développer, et les tests remplacent le stockage par une doublure.
 
 ## Intégration et déploiement continus
 

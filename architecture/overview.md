@@ -13,10 +13,13 @@ flowchart LR
     db[("PostgreSQL 16<br/>RDS en production")]
     stripe["Stripe<br/>paiement (mode test)"]
     watch["CloudWatch<br/>supervision (à venir)"]
+    posters["Affiches des films<br/>bucket S3 privé (US 5.6)"]
 
     user -->|HTTPS| cdn
     cdn -->|"fichiers du front"| front
     cdn -->|"HTTP JSON /api/..."| api
+    cdn -->|"/posters/..."| posters
+    api -->|"ajout d'une affiche"| posters
     api -->|EF Core| db
     api -->|"API Stripe"| stripe
     api -.-> watch
@@ -24,10 +27,11 @@ flowchart LR
 
 | Composant | Rôle | Dépôt |
 |---|---|---|
-| CloudFront | CDN du Bloc 1 : HTTPS, une seule adresse ; oriente `/api/*` vers l'API et le reste vers les fichiers du front | configuration : [environnements](../deployment/environments.md) |
+| CloudFront | CDN du Bloc 1 : HTTPS, une seule adresse ; oriente `/api/*` vers l'API, `/posters/*` vers le bucket des affiches et le reste vers les fichiers du front | configuration : [environnements](../deployment/environments.md) |
 | Front-end (Angular) | application web (SPA) : programmation, compte, réservation, billets, écrans du personnel ; fichiers statiques sur S3 | [grand-cinema-frontend](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend) |
 | API Back-end (ASP.NET Core) | règles métier, sécurité, accès aux données ; aucune page HTML ; conteneur Docker sur EC2 | [grand-cinema-backend](https://github.com/Grand-Cinema-Studi/grand-cinema-backend) |
 | PostgreSQL | utilisateurs, films, salles, places, séances, réservations | schéma : [erd.md](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/blob/dev/docs/database/erd.md) |
+| Affiches des films | images envoyées par le responsable (US 5.6) : bucket S3 privé, lu par CloudFront seule ; l'API ne peut qu'y ajouter un fichier | configuration : [environnements](../deployment/environments.md) ; sécurité : [affiches](../security/security.md#affiches-des-films-us-56) |
 | Stripe | paiement par carte ; aucune donnée de carte ne transite par l'application ni n'est stockée ; conformité PCI-DSS portée par Stripe | service tiers |
 | CloudWatch | supervision : métriques, journaux, alertes | AWS |
 
@@ -46,7 +50,7 @@ Découpage issu du Bloc 1, réalisé progressivement user story par user story :
 | Réservation | 2.2, 2.3 | Fait (places restantes ; `POST`, `GET` et `DELETE /api/reservations`) |
 | Paiement | 3.1 | Fait (`POST /api/reservations/{id}/payment`, `POST /api/payments/stripe-webhook`), en mode test |
 | Billets | 3.2, 4.1 | Fait pour l'US 3.2 (`GET /api/reservations/{id}/ticket`, `GET /api/users/me/tickets`) : code du billet tiré au paiement confirmé, QR code dessiné par le front ; contrôle à l'entrée fait pour l'US 4.1 (`/api/ticket-checks`, contrôleur seulement) : billet vérifié et marqué utilisé en une seule instruction SQL |
-| Administration | 5.1, 5.2, 5.3 | Fait (`/api/programming`, `GET /api/reservation-tracking`), réservé au personnel |
+| Administration | 5.1, 5.2, 5.3, 5.6 | Fait (`/api/programming`, dont le catalogue des films `/api/programming/movies` ; `GET /api/reservation-tracking`), réservé au personnel |
 
 ## Architecture du backend
 
@@ -76,6 +80,7 @@ flowchart TB
 - **Blocage limité dans le temps** : places libérées si le paiement n'est pas validé au bout de 10 minutes (paramétrable), dans la transaction même du blocage suivant, sans tâche planifiée.
 - **Heure du cinéma** : les séances sont enregistrées à l'heure locale du cinéma (Europe/Paris) ; les instants techniques (création, expiration) en UTC.
 - **Paiement confirmé par Stripe seul** : la carte est saisie chez Stripe ; une notification signée, vérifiée par l'API, passe la réservation à « payée », sous le même verrou que les blocages.
+- **Annuler ou archiver plutôt que supprimer** : une séance annulée garde ses ventes (`CancelledAt`, US 5.2), un film archivé ses séances, ses ventes et ses billets (`ArchivedAt`, US 5.6) ; un filtre ou une condition les retire des lectures. Seul le compte d'un utilisateur est vraiment effacé (droit à l'effacement), et ses réservations restent, sans lien avec lui. Le suivi des ventes et la comptabilité ne perdent donc rien.
 - **Secrets hors du code** : aucun mot de passe ni clé dans les dépôts (voir [environnements](../deployment/environments.md)).
 
 ## Hébergement

@@ -1,8 +1,8 @@
 # Procès-verbal de recette du MVP
 
-Ce document trace la recette du MVP : chaque critère d'acceptation des 11 user stories est rejoué sur l'environnement de recette, avec les comptes de démonstration, puis validé ou refusé par le Product Owner. C'est la preuve du point de la [Definition of Done](https://github.com/Grand-Cinema-Studi/grand-cinema-docs/issues/24) « déployée sur l'environnement de recette et validée par le Product Owner », et du plan de recette de la [stratégie de tests](testing-strategy.md) exécuté.
+Ce document trace la recette du MVP : chaque critère d'acceptation des 12 user stories est rejoué sur l'environnement de recette, avec les comptes de démonstration, puis validé ou refusé par le Product Owner. C'est la preuve du point de la [Definition of Done](https://github.com/Grand-Cinema-Studi/grand-cinema-docs/issues/24) « déployée sur l'environnement de recette et validée par le Product Owner », et du plan de recette de la [stratégie de tests](testing-strategy.md) exécuté.
 
-Les tests automatisés (192 au backend, 158 au frontend) prouvent les règles à chaque Pull Request. Cette recette vérifie autre chose : le produit déployé, tel qu'un utilisateur le voit, de bout en bout.
+Les tests automatisés (235 au backend, 175 au frontend) prouvent les règles à chaque Pull Request. Cette recette vérifie autre chose : le produit déployé, tel qu'un utilisateur le voit, de bout en bout.
 
 ## Cadre de la recette
 
@@ -28,7 +28,7 @@ Les mots de passe sont dans le README du backend (« Données de démonstration 
 | _(aucun)_ | visiteur | US 1.1, 1.2, 2.2, l'invitation à se connecter de l'US 2.3 |
 | compte créé pendant la recette | spectateur | US 2.1 (création, refus, suppression) |
 | `client@grand-cinema.test` | spectateur (`Customer`) | US 2.3, 3.1, 3.2 |
-| `manager@grand-cinema.test` | responsable (`Manager`) | US 5.2, 5.3 |
+| `manager@grand-cinema.test` | responsable (`Manager`) | US 5.2, 5.3, 5.6 |
 | `cashier@grand-cinema.test` | caissier (`Cashier`) | US 5.1 |
 | `inspector@grand-cinema.test` | contrôleur (`TicketInspector`) | US 4.1 |
 
@@ -147,15 +147,28 @@ Les mots de passe sont dans le README du backend (« Données de démonstration 
 | 5.3-1 | Par séance, places vendues et capacité de la salle | « Réservations », aujourd'hui, puis une autre date | Vendues (en ligne, au guichet), capacité, taux de remplissage | `manager@` | manuelle | | | [B #55](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/55), [F #20](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/20) |
 | 5.3-2 | Données conservées pour l'analyse future (US 5.4) | Sur le serveur : les réservations payées et expirées des jours passés sont toujours en base, avec leurs dates (`CreatedAt`, `PaidAt`) | Les lignes existent ; rien n'est supprimé à la fin d'une séance | — | base | | | [B #55](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/55) |
 
+### US 5.6 – Gérer le catalogue des films (ajoutée au MVP le 07/11/2026)
+
+Préparer deux images : une affiche JPEG ou PNG de moins de 2 Mo, et une image de plus de 2 Mo (ou un fichier texte renommé en `.jpg`).
+
+| N° | Critère | Scénario | Attendu | Compte | Preuve | Date | Résultat | PR |
+|---|---|---|---|---|---|---|---|---|
+| 5.6-1 | Film ajouté (titre, synopsis, durée, genre, date de sortie, affiche) : proposé dans le formulaire des séances | « Programmation », « Ajouter un film au catalogue » : titre `Recette <date>`, genre choisi dans la liste, la petite affiche ; puis « Nouvelle séance » | « … est ajouté au catalogue. » ; le film est déjà choisi dans « Nouvelle séance » | `manager@` | manuelle | | | [B #67](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/67), [F #30](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/30) |
+| 5.6-2 | Une séance programmée : la fiche, affiche comprise, est publique | Programmer le film demain à 10 h ; en navigation privée, l'accueil à la date de demain, puis la fiche du film | Le film, son affiche et sa séance s'affichent ; l'affiche est servie par la recette (`/posters/…`) | `manager@`, visiteur | manuelle | | | [B #67](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/67), [F #30](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/30) |
+| 5.6-3 | Fiche modifiée : consultation publique à jour ; durée figée tant qu'une séance n'est pas terminée | « Modifier un film du catalogue », le film de 5.6-1 : changer le titre et l'affiche, « Enregistrer le film » ; puis changer sa durée | La fiche publique montre le nouveau titre et la nouvelle affiche ; le changement de durée est refusé : « Une séance de ce film n'est pas terminée… » | `manager@`, visiteur | manuelle | | | [B #73](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/73), [F #31](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/31) |
+| 5.6-4 | Affiche JPEG, PNG ou WebP de 2 Mo au plus, sinon refus explicite | Ajouter un film avec l'image de plus de 2 Mo, puis avec le fichier texte renommé en `.jpg` (Swagger pour ce second cas, si le front le bloque) | Plus de 2 Mo : refus avant tout envoi ; fichier qui n'est pas une image : `400` sur `poster`, message affiché ; aucun film ajouté | `manager@` | manuelle | | | [B #67](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/67), [F #30](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/30) |
+| 5.6-5 | Seul le responsable accède à cette fonction | Avec le jeton de `client@`, `cashier@` puis `inspector@` : `POST /api/programming/movies` (Swagger) | `403` pour les trois ; aucun lien « Programmation » dans leur en-tête | `client@`, `cashier@`, `inspector@` | manuelle | | | [B #67](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/67) |
+| 5.6-6 | Film archivé : plus proposé à la programmation ; séances passées, ventes et billets gardés | Annuler la séance de 5.6-2 ; « Archiver ce film », « Confirmer l'archivage » ; puis, sur le serveur, `SELECT "Title", "ArchivedAt" FROM "Movies" WHERE "ArchivedAt" IS NOT NULL;` | « … est archivé… » ; le film n'est plus dans les listes de la page ; la ligne existe toujours, avec sa date d'archivage | `manager@` | manuelle et base | | | [B #73](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/73), [F #31](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/31) |
+
 ## Ajustements des droits par rôle (décision du Product Owner, 07/11/2026)
 
 Hors critères des user stories : chaque rôle n'ouvre que les pages de son métier, et seul le spectateur achète (tableau des droits de la [sécurité](../security/security.md)).
 
 | N° | Règle | Scénario | Attendu | Compte | Preuve | Date | Résultat | PR |
 |---|---|---|---|---|---|---|---|---|
-| A-1 | Seul le spectateur achète | Avec le jeton de `cashier@`, `inspector@` puis `manager@` : `POST /api/reservations` (Swagger ou `curl`) | `403` pour les trois ; `201` pour `client@` | `cashier@`, `inspector@`, `manager@`, `client@` | manuelle | | | B #… _(à reporter)_ |
-| A-2 | Le caissier et le contrôleur n'ouvrent que leurs pages | Après la connexion ; puis « Grand Cinéma », `/` et `/movies` | Arrivée et retour sur « Réservations » (`cashier@`), « Contrôle » (`inspector@`) ; « Mon compte » et les pages légales s'ouvrent | `cashier@`, `inspector@` | manuelle | | | F #… _(à reporter)_ |
-| A-3 | Achat proposé seulement au visiteur et au spectateur | En-tête (ordinateur et téléphone) ; fiche d'un film, choisir une séance | Pas de « Acheter un billet » pour le personnel ; le responsable voit « La réservation en ligne est réservée aux spectateurs. » | `manager@`, `cashier@`, `inspector@` | manuelle | | | F #… _(à reporter)_ |
+| A-1 | Seul le spectateur achète | Avec le jeton de `cashier@`, `inspector@` puis `manager@` : `POST /api/reservations` (Swagger ou `curl`) | `403` pour les trois ; `201` pour `client@` | `cashier@`, `inspector@`, `manager@`, `client@` | manuelle | | | [B #66](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/66) |
+| A-2 | Le caissier et le contrôleur n'ouvrent que leurs pages | Après la connexion ; puis « Grand Cinéma », `/` et `/movies` | Arrivée et retour sur « Réservations » (`cashier@`), « Contrôle » (`inspector@`) ; « Mon compte » et les pages légales s'ouvrent | `cashier@`, `inspector@` | manuelle | | | [F #29](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/29) |
+| A-3 | Achat proposé seulement au visiteur et au spectateur | En-tête (ordinateur et téléphone) ; fiche d'un film, choisir une séance | Pas de « Acheter un billet » pour le personnel ; le responsable voit « La réservation en ligne est réservée aux spectateurs. » | `manager@`, `cashier@`, `inspector@` | manuelle | | | [F #29](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/pull/29) |
 
 ## Anomalies relevées pendant la recette
 
@@ -163,7 +176,7 @@ Chaque anomalie est une issue `bug` du dépôt de la cause, rattachée au Projec
 
 | Critère | Issue | Gravité | Correctif | Rejoué le | Résultat |
 |---|---|---|---|---|---|
-| 1.1-1, 5.2-1 (données de démonstration) : Alien et Ratatouille à 22 h 30 en Salle 1 le 08/11/2026 | B #… _(à reporter)_ | Mineure | Séances de démonstration supprimées avant chaque rechargement, contrôle des chevauchements : `deploy/reset-demo-data.sh` ([bug 0002](bugs/0002-demo-screenings-overlap.md)) | 08/11/2026 | Conforme |
+| 1.1-1, 5.2-1 (données de démonstration) : Alien et Ratatouille à 22 h 30 en Salle 1 le 08/11/2026 | B #… _(à reporter)_ | Mineure | Séances de démonstration supprimées avant chaque rechargement, contrôle des chevauchements : `deploy/reset-demo-data.sh` ([bug 0002](bugs/0002-demo-screenings-overlap.md)) ; [B #68](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/68), [B #69](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/69), [B #71](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/pull/71) | 08/11/2026 | Conforme |
 
 ## Synthèse
 
@@ -173,9 +186,9 @@ Chaque anomalie est une issue `bug` du dépôt de la cause, rattachée au Projec
 | Epic 2 (US 2.1, 2.2, 2.3) | 16 | | | |
 | Epic 3 (US 3.1, 3.2) | 7 | | | |
 | Epic 4 (US 4.1) | 4 | | | |
-| Epic 5 (US 5.1, 5.2, 5.3) | 9 | | | |
+| Epic 5 (US 5.1, 5.2, 5.3, 5.6) | 15 | | | |
 | Ajustements des droits | 3 | | | |
-| **Total** | **46** | | | |
+| **Total** | **52** | | | |
 
 ## Décision du Product Owner
 
