@@ -11,13 +11,13 @@ Les tests automatisés (236 au backend, 175 au frontend) prouvent les règles à
 | Environnement | recette AWS (CloudFront, EC2, PostgreSQL), voir [environnements](../deployment/environments.md) |
 | Adresse | https://d3oaw7zyh0jmbo.cloudfront.net |
 | Documentation de l'API | https://d3oaw7zyh0jmbo.cloudfront.net/swagger (activé sur la recette pendant la correction, désactivé par défaut : voir [environnements](../deployment/environments.md)) |
-| Version du backend | branche `dev`, commit `…` _(à reporter : `git log -1 --format=%h origin/dev`)_ |
-| Version du frontend | branche `dev`, commit `…` _(à reporter)_ |
-| Données | données de démonstration remises à zéro par `deploy/reset-demo-data.sh` le `…` _(à reporter ; jamais `seed-dev.sql` seul : voir le [bug 0002](bugs/0002-demo-screenings-overlap.md))_ |
+| Version du backend | branche `dev`, commit [`6dae1da`](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/commit/6dae1da) |
+| Version du frontend | branche `dev`, commit [`9b0def1`](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/commit/9b0def1) |
+| Données | données de démonstration remises à zéro par `deploy/reset-demo-data.sh` le 09/11/2026, commit `6dae1da` du backend (jamais `seed-dev.sql` seul : voir le [bug 0002](bugs/0002-demo-screenings-overlap.md)) |
 | Paiement | Stripe en mode test : carte acceptée `4242 4242 4242 4242`, carte refusée `4000 0000 0000 0002` (date future, code quelconque) |
 | Appareils | un ordinateur (Chrome, 1440 px) et un téléphone (navigateur mobile) |
-| Recette menée par | Slimane Smahi, dans le rôle du Product Owner |
-| Dates | du `…` au `…` _(à reporter)_ |
+| Recette menée par | Slimane Smahi |
+| Dates | Le 09 novembre 2026 |
 
 ## Comptes utilisés
 
@@ -35,8 +35,9 @@ Les mots de passe sont dans le README du backend (« Données de démonstration 
 ## Comment remplir
 
 - Une ligne par critère d'acceptation, dans l'ordre du backlog ; la colonne « Scénario » dit quoi faire, la colonne « Attendu » ce qu'on doit voir.
-- **Résultat** : conforme ; non conforme : une issue `bug` est ouverte dans le dépôt de la cause et notée dans « Anomalies » ; conforme avec réserve, expliquée en note.
-- **Preuve** : _manuelle_ (rejouée à l'écran) ; _base_ (requête SQL sur la recette) ; _auto_ (le critère n'est pas rejouable à la main de façon fiable : le test automatisé cité en est la preuve, et sa dernière exécution verte en CI est vérifiée).
+- **Résultat** : "conforme", "n"on conforme", "conforme avec réserve" (expliquée en note) 
+Pour le "nom comforme", une issue `bug` est ouverte dans le dépôt de la cause et notée dans "Anomalies".
+- **Preuve** : _manuelle_ (rejouée à l'écran). _base_ (requête SQL sur la recette) ; _auto_ (le critère n'est pas rejouable à la main de façon fiable : le test automatisé cité en est la preuve, et sa dernière exécution verte en CI est vérifiée).
 - **PR** : la ou les Pull Requests qui ont livré le critère (B = backend, F = frontend).
 
 ## Epic 1 – Consultation et programmation
