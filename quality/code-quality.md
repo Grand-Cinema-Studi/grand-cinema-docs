@@ -241,6 +241,19 @@ Les 2 problèmes de maintenabilité du backend, traités avant le gel :
 
 Après la Pull Request #77 (09/11/2026) : **0 problème ouvert** au backend comme au frontend.
 
+**Relevé au gel du code (10/11/2026)**, sur les versions recettées et livrées (`v1.0.0`) :
+
+| Mesure (tout le code, branche `dev`) | Backend (`6dae1da`) | Frontend (`6f25625`) |
+|---|---|---|
+| Quality Gate | passé | passé |
+| Lignes de code | environ 4 100 | environ 4 300 |
+| Sécurité, fiabilité, maintenabilité | A, 0 problème | A, 0 problème |
+| Points sensibles de sécurité examinés | 100 % | 100 % |
+| Couverture | **97,1 %** (236 tests) | **93,8 %** (183 tests) |
+| Duplication | 0,0 % | 0,0 % |
+
+Le backend n'a pas changé depuis le contrôle du 09/11 ; le frontend a reçu les deux améliorations faites avant le gel (afficher et confirmer le mot de passe, frontend #33 ; formulaire d'un film dans une fenêtre, frontend #35), avec leurs tests : la couverture passe de 93,5 % à 93,8 %.
+
 **Couverture du frontend** : de 98,4 % (27/10/2026) à 93,5 %, sans test retiré. Les fichiers les moins couverts sont les frontières avec le navigateur, remplacées par une doublure dans les tests unitaires et vérifiées à la main sur la recette :
 
 | Fichier | Couverture du nouveau code | Pourquoi |

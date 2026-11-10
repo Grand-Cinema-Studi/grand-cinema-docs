@@ -163,6 +163,10 @@ Après les tests d'API (journal du backend, étape 13) :
 
 Le taux de branches baisse parce que celles de l'API sont désormais comptées. **SonarCloud, branche `dev` : 97,2 %** sur tout le code (77,6 % avant), 0 problème, notes A.
 
+### Mesure au gel du code (10/11/2026)
+
+SonarCloud, branche `dev`, sur les versions recettées et livrées : **97,1 %** au backend (236 tests, inchangé), **93,8 %** au frontend (183 tests, après les améliorations du 10/11) ; Quality Gate passé et 0 problème ouvert dans les deux dépôts.
+
 ### Mesure du 09/11/2026 (avant le gel)
 
 SonarCloud, branche `dev`, tout le code : **97,1 %** au backend (236 tests), **93,5 %** au frontend (175 tests), sur environ 4 100 lignes chacun ; Quality Gate passé dans les deux dépôts. Détail et problèmes relevés : [qualité du code](code-quality.md#contrôle-avant-le-gel-09112026).
