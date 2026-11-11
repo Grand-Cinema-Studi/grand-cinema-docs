@@ -272,7 +272,7 @@ Ces fichiers ne sont pas exclus de la mesure : le chiffre reste honnête, et la 
 | Revue de chaque Pull Request | relecture du diff selon les [standards de code](../development/coding-standards.md#revue-de-code) | Fait |
 | `dotnet format --verify-no-changes` | formatage identique sur tous les postes, vérifié par la CI à chaque Pull Request ; mise en forme initiale de tout le code dans un commit `style:` séparé | Fait (25/10/2026) |
 | `.editorconfig` | réglages des règles par dossier (CA1861 désactivée dans les tests, avec la raison) | Fait (25/10/2026) |
-| Dependabot | alerte, et propose une mise à jour, quand une dépendance (paquet NuGet, action GitHub, image Docker) a une faille connue ou une nouvelle version | Fait (25/10/2026) |
+| Dependabot | alerte, et propose une mise à jour, quand une dépendance (paquet NuGet, action GitHub, image Docker) a une faille connue ou une nouvelle version | Configuré le 25/10/2026 ; actif depuis la release v1.0.0 (11/11/2026, #80), car Dependabot lit sa configuration sur `main`. Premières propositions #81 à #84, arrivées après le gel, non intégrées : voir [mises à jour des dépendances](../development/versioning.md#mises-à-jour-des-dépendances) |
 | `dotnet list package --vulnerable` | contrôle, avant une livraison, qu'aucun paquet NuGet n'a de faille connue | Fait (09/11/2026, aucun paquet vulnérable) |
 
 Frontend :
@@ -284,5 +284,5 @@ Frontend :
 | Prettier (`format:check`) | formatage identique sur tous les postes, classes Tailwind triées ; vérifié par la CI | Fait (20/10/2026) |
 | `.gitattributes` (`eol=lf`) | mêmes fins de ligne sur Windows et sous Linux : `format:check` donne le même résultat partout | Fait (27/10/2026) |
 | Revue de chaque Pull Request | relecture du diff selon les [standards de code](../development/coding-standards.md#revue-de-code) | Fait |
-| Dependabot | mises à jour hebdomadaires des paquets npm et des actions GitHub, proposées vers `dev` | Fait (20/10/2026) |
+| Dependabot | mises à jour hebdomadaires des paquets npm et des actions GitHub, proposées vers `dev` | Configuré le 20/10/2026 ; actif à partir de la fusion de `dev` dans `main` de la release v1.0.0, car Dependabot lit sa configuration sur `main` : voir [mises à jour des dépendances](../development/versioning.md#mises-à-jour-des-dépendances) |
 | `npm audit --omit=dev` | contrôle, avant une livraison, qu'aucune dépendance livrée au navigateur n'a de faille connue | Fait (09/11/2026, 0 vulnérabilité) |
