@@ -199,3 +199,5 @@ Chaque anomalie est une issue `bug` du dépôt de la cause, rattachée au Projec
 Réserves acceptées : aucune
 
 Date : `10 novembre 2026` · Product Owner : Slimane Smahi (rôle tenu dans le cadre du projet)
+
+Release : `v1.0.0`, le 11/11/2026, sur les commits recettés. Backend : Pull Request #80, commit de fusion `b67f8d6` ([release](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/releases/tag/v1.0.0)). Frontend : Pull Request #36, commit de fusion `fa6ce0a` ([release](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/releases/tag/v1.0.0)). Le dépôt de documentation porte le même tag.

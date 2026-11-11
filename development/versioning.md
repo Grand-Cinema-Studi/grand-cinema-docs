@@ -33,7 +33,7 @@ Les éléments marqués _(à venir)_ sont décidés mais pas encore réalisés.
 
 ## Tags et notes de version
 
-Aucun tag n'a été posé pendant le développement du MVP. Le premier est **`v1.0.0`**, posé le 11/11/2026 sur les versions gelées le 10/11/2026 (backend `6dae1da`, frontend `6f25625`) : le MVP complet, accepté après la recette consignée dans le [procès-verbal de recette](../quality/acceptance-report.md) (52 critères conformes). Le dépôt de documentation porte le même tag, sur l'état de la documentation livrée avec cette version. Ensuite, chaque fusion de `dev` dans `main` est une version, livrée selon la procédure ci-dessous.
+Aucun tag n'a été posé pendant le développement du MVP. Le premier est **`v1.0.0`**, posé le 11/11/2026 sur les versions gelées le 10/11/2026 (backend `6dae1da`, frontend `6f25625`) : le MVP complet, accepté après la recette consignée dans le [procès-verbal de recette](../quality/acceptance-report.md) (52 critères conformes). Le tag est posé sur le commit de fusion de `dev` dans `main` : backend `b67f8d6` (Pull Request #80, [release](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/releases/tag/v1.0.0)), frontend `fa6ce0a` (Pull Request #36, [release](https://github.com/Grand-Cinema-Studi/grand-cinema-frontend/releases/tag/v1.0.0)) ; chacun contient exactement le commit recetté. Le dépôt de documentation porte le même tag, sur l'état de la documentation livrée avec cette version. Ensuite, chaque fusion de `dev` dans `main` est une version, livrée selon la procédure ci-dessous.
 
 ## Procédure de release
 
@@ -91,9 +91,9 @@ Le backend et le frontend ont chacun leur numéro de version : ils sont livrés 
 
 Dependabot propose chaque semaine les mises à jour des dépendances : paquets NuGet, actions GitHub et images Docker pour le backend ; paquets npm et actions GitHub pour le frontend. Ses Pull Requests visent `dev` (`target-branch: dev`), jamais `main`.
 
-**Quand il s'est mis en marche.** Dependabot lit sa configuration (`.github/dependabot.yml`) sur la branche par défaut du dépôt, `main`. Jusqu'à la première release, `main` ne contenait que le commit initial : la configuration, présente sur `dev` depuis le 20/10/2026 (frontend) et le 25/10/2026 (backend), n'était pas lue, et aucune mise à jour n'a été proposée pendant le développement. Dependabot a démarré à la fusion de `dev` dans `main` de la release v1.0.0 (backend : Pull Request #80, 11/11/2026).
+**Quand il s'est mis en marche.** Dependabot lit sa configuration (`.github/dependabot.yml`) sur la branche par défaut du dépôt, `main`. Jusqu'à la première release, `main` ne contenait que le commit initial : la configuration, présente sur `dev` depuis le 20/10/2026 (frontend) et le 25/10/2026 (backend), n'était pas lue, et aucune mise à jour n'a été proposée pendant le développement. Dependabot a démarré à la fusion de `dev` dans `main` de la release v1.0.0, le 11/11/2026 (backend : Pull Request #80 ; frontend : Pull Request #36).
 
-**Ses premières propositions, après le gel (backend).** Arrivées après le gel du code du 10/11/2026, elles ne sont pas intégrées à la v1.0.0 :
+**Ses premières propositions, après le gel.** Arrivées après le gel du code du 10/11/2026, elles ne sont pas intégrées à la v1.0.0. Backend :
 
 | Pull Request | Mise à jour | Décision |
 |---|---|---|
@@ -102,7 +102,18 @@ Dependabot propose chaque semaine les mises à jour des dépendances : paquets N
 | #83 | groupe `github-actions`, 4 mises à jour | cycle de maintenance, version `v1.0.1` |
 | #84 | groupe `nuget-minor-and-patch`, 12 mises à jour (versions mineures et correctifs) | cycle de maintenance, version `v1.0.1` |
 
-Leur intégration continue échoue au démarrage (30 à 40 secondes) ; la cause reste à analyser. Le fichier n'écarte les versions majeures que pour NuGet, d'où #81 et #82 : la même règle est à ajouter pour les images Docker.
+Côté frontend, à la fusion de sa release, les mêmes raisons ont donné :
+
+| Pull Request | Mise à jour | Décision |
+|---|---|---|
+| #37 | action `SonarSource/sonarqube-scan-action` 8.3.0 → 8.4.1 | cycle de maintenance |
+| #38 | `@angular/common` 22.2.3 → 22.2.5 | cycle de maintenance, avec les autres paquets `@angular/*`, qui se mettent à jour ensemble |
+| #39 | `typescript` 6.0.3 → 7.0.2 | version majeure : décision à part, liée à la version d'Angular |
+| #40 | `vitest` 5.0.5 → 5.1.0 | cycle de maintenance, avec #41 |
+| #41 | `@vitest/coverage-v8` 5.0.5 → 5.1.0 | cycle de maintenance, avec #40 |
+| #42 | `postcss` 8.5.31 → 8.5.32 | cycle de maintenance |
+
+Toutes ont leur intégration continue rouge : en 30 à 40 secondes dans le backend ; dans le frontend, en 8 à 12 secondes pour #38 et #39, en 1 min 20 à 1 min 40 pour les autres. Les causes restent à analyser. Le fichier du backend n'écarte les versions majeures que pour NuGet, d'où #81 et #82 ; celui du frontend n'en écarte aucune, d'où #39, et ne groupe pas les paquets qui vont ensemble (`@angular/*`, `vitest` et `@vitest/coverage-v8`). Ces règles sont à ajouter.
 
 **Ce qui bloque une livraison, et ce qui ne la bloque pas**
 
@@ -114,7 +125,7 @@ Leur intégration continue échoue au démarrage (30 à 40 secondes) ; la cause 
 **En exploitation**, ces propositions sont traitées régulièrement (chaque semaine) : c'est de la maintenance, pas un prérequis à la mise en production.
 
 - Correctifs et versions mineures : intégration continue réparée si besoin, fusion dans `dev`, recette, puis version de correctif (`v1.0.1`) selon la procédure de release.
-- Version majeure (.NET 11, nouvelle version majeure d'Angular) : un projet à part, avec son ADR, planifié et testé.
+- Version majeure (.NET 11, TypeScript 7, nouvelle version majeure d'Angular) : un projet à part, avec son ADR, planifié et testé.
 - Faille de sécurité signalée sur une dépendance utilisée : traitée en priorité, par une branche `hotfix/…` si la version livrée est exposée.
 
 ## Version de l'API

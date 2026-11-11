@@ -284,5 +284,5 @@ Frontend :
 | Prettier (`format:check`) | formatage identique sur tous les postes, classes Tailwind triées ; vérifié par la CI | Fait (20/10/2026) |
 | `.gitattributes` (`eol=lf`) | mêmes fins de ligne sur Windows et sous Linux : `format:check` donne le même résultat partout | Fait (27/10/2026) |
 | Revue de chaque Pull Request | relecture du diff selon les [standards de code](../development/coding-standards.md#revue-de-code) | Fait |
-| Dependabot | mises à jour hebdomadaires des paquets npm et des actions GitHub, proposées vers `dev` | Configuré le 20/10/2026 ; actif à partir de la fusion de `dev` dans `main` de la release v1.0.0, car Dependabot lit sa configuration sur `main` : voir [mises à jour des dépendances](../development/versioning.md#mises-à-jour-des-dépendances) |
+| Dependabot | mises à jour hebdomadaires des paquets npm et des actions GitHub, proposées vers `dev` | Configuré le 20/10/2026 ; actif depuis la release v1.0.0 (11/11/2026, #36), car Dependabot lit sa configuration sur `main`. Premières propositions #37 à #42, arrivées après le gel, non intégrées : voir [mises à jour des dépendances](../development/versioning.md#mises-à-jour-des-dépendances) |
 | `npm audit --omit=dev` | contrôle, avant une livraison, qu'aucune dépendance livrée au navigateur n'a de faille connue | Fait (09/11/2026, 0 vulnérabilité) |
