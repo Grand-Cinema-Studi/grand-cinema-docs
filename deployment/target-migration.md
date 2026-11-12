@@ -29,6 +29,8 @@ Les services AWS utilisés aujourd'hui :
 
 ![Buckets S3 : front et affiches](images/target-migration/04-s3-buckets.png)
 
+![Bucket des affiches : accès public bloqué](images/target-migration/04b-s3-block-public-access.png)
+
 ![Paramètres de la recette dans Parameter Store (noms seulement)](images/target-migration/05-ssm-parameters.png)
 
 ![Rôles IAM : accès de GitHub par OIDC et rôle de l'instance](images/target-migration/06-iam-roles.png)
@@ -241,15 +243,16 @@ Le Bloc 1 estimait l'hébergement AWS de la solution retenue à 420 à 600 €/a
 
 ## Captures
 
-Les captures sont dans [`images/target-migration/`](images/target-migration/). Elles ne montrent jamais une valeur secrète : dans Parameter Store, seuls les noms des paramètres apparaissent.
+Les captures sont dans [`images/target-migration/`](images/target-migration/), prises le 12/11/2026 dans la console AWS (en anglais). Elles ne montrent jamais une valeur secrète : dans Parameter Store, seuls les noms des paramètres apparaissent ; l'ID du compte AWS et l'adresse IP publique du serveur sont masqués.
 
 | Fichier | Où dans la console AWS | Ce qu'on doit voir |
 |---|---|---|
 | `01-ec2-instance.png` | EC2 → Instances | l'instance de la recette, `t3.micro`, `eu-west-3`, en cours d'exécution |
-| `02-security-group.png` | EC2 → Groupes de sécurité → onglet Règles entrantes | HTTP 80 ouvert à la seule liste de préfixes CloudFront |
-| `03-cloudfront-behaviors.png` | CloudFront → la distribution → onglet Comportements | `/posters/*`, `/api/*`, `/health`, `/swagger*`, `/openapi/*` et le comportement par défaut |
-| `04-s3-buckets.png` | S3 → Compartiments | le bucket du front et celui des affiches, accès public bloqué |
+| `02-security-group.png` | EC2 → Security groups → onglet Inbound rules | HTTP 80 ouvert à la seule liste de préfixes CloudFront |
+| `03-cloudfront-behaviors.png` | CloudFront → la distribution → onglet Behaviors | `/posters/*`, `/api/*`, `/health`, `/swagger*`, `/openapi/*` et le comportement par défaut |
+| `04-s3-buckets.png` | S3 → Buckets | le bucket du front et celui des affiches, en région Paris |
+| `04b-s3-block-public-access.png` | S3 → bucket des affiches → onglet Permissions | « Block all public access » activé |
 | `05-ssm-parameters.png` | Systems Manager → Parameter Store | les paramètres `/grandcinema/recette/*`, type SecureString, **valeurs masquées** |
-| `06-iam-roles.png` | IAM → Rôles | les rôles OIDC du front et du back, et `grandcinema-ec2-role` |
+| `06-iam-roles.png` | IAM → Roles | les rôles OIDC du back (`grandcinema-github-deploy`) et du front (`grandcinema-github-front-deploy`), et `grandcinema-ec2-role` |
 
 Les captures des services de la cible (répartiteur de charge, groupe Auto Scaling, RDS) seront ajoutées lors de leur mise en place, en V2.
