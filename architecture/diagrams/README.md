@@ -9,6 +9,7 @@ Les schémas du projet sont écrits en **Mermaid**, directement dans les documen
 | Composants de l'application (front, API, base, Stripe) | Mermaid | [overview.md](../overview.md#composants) |
 | Couches du backend (Clean Architecture) | Mermaid | [overview.md](../overview.md#architecture-du-backend) |
 | Architecture cible du Bloc 1 et recette du projet (CloudFront, S3, EC2, conteneurs) | texte | [environments.md](../../deployment/environments.md#architecture-cible-bloc-1), section « [Mise en ligne retenue](../../deployment/environments.md#mise-en-ligne-retenue-pour-le-projet--la-recette) » |
+| Architecture cible en V2 (CloudFront, répartiteur de charge, Auto Scaling, RDS) | Mermaid | [target-migration.md](../../deployment/target-migration.md#4-architecture-cible) |
 | Modèle de données (7 tables) | Mermaid | [erd.md](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/blob/dev/docs/database/erd.md), dans le dépôt backend, à côté des migrations |
 
 ## Exports en image

@@ -41,7 +41,8 @@ grand-cinema-docs/
 │   └── gdpr.md                données personnelles, conservation, droits (RGPD)
 └── deployment/                mise en ligne
     ├── environments.md        environnements, architecture de production, secrets, CI/CD
-    └── deploy-guide.md        déployer, vérifier, revenir en arrière, sauvegarder
+    ├── deploy-guide.md        déployer, vérifier, revenir en arrière, sauvegarder
+    └── target-migration.md    passage à l'architecture cible en V2 : quand, comment, coût
 ```
 
 Les éléments marqués _(à venir)_ dans les documents sont décidés mais pas encore réalisés.
@@ -93,6 +94,7 @@ Les éléments marqués _(à venir)_ dans les documents sont décidés mais pas 
 |---|---|
 | [Environnements](deployment/environments.md) | Où tourne l'application, et comment est-elle configurée ? |
 | [Guide de déploiement](deployment/deploy-guide.md) | Comment mettre en ligne une version, revenir en arrière, restaurer la base ? |
+| [Passage à l'architecture cible](deployment/target-migration.md) | Quand et comment passer de la recette au répartiteur de charge, à l'Auto Scaling et à RDS, et pour quel coût ? |
 
 ## Où se trouve quelle documentation
 

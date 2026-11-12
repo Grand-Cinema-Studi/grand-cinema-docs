@@ -79,7 +79,7 @@ SSM Session Manager   accès au serveur sans SSH ni port d'administration ouvert
 - **Droits du serveur sur S3** : le rôle de l'instance (`grandcinema-ec2-role`) reçoit la seule action `s3:PutObject` sur `posters/*` (politique `grand-cinema-recette-posters-write`) ; l'API ne peut ni lire, ni lister, ni supprimer. Elle obtient ces droits par le service de métadonnées de l'instance : IMDSv2 obligatoire, limite de sauts à 2, car l'API tourne dans un conteneur Docker, un saut réseau plus loin que l'instance.
 - **Migrations** appliquées par le déploiement, avant de démarrer la nouvelle version de l'API, jamais au démarrage de l'API.
 - **Fuseau horaire** : `TZ=Europe/Paris` dans les conteneurs, pour que « aujourd'hui » soit le jour à Paris. Les séances sont enregistrées à l'heure du cinéma, les instants techniques (création, expiration du blocage) en UTC.
-- **Passage à la cible** : l'image de l'API ne change pas ; on ajoute le répartiteur de charge et l'Auto Scaling, et la chaîne de connexion pointe vers RDS.
+- **Passage à la cible** : l'image de l'API ne change pas. On ajoute le répartiteur de charge et l'Auto Scaling, et la chaîne de connexion pointe vers RDS. Quand (en V2) et comment, étape par étape : [passage à l'architecture cible](target-migration.md).
 - **Repli** : si CloudFront n'était pas disponible avec le type de compte AWS utilisé, le front serait servi par un proxy sur le même serveur (HTTP, sans nom de domaine). C'est un écart à la cible, à dire explicitement.
 
 Déployer, vérifier, revenir en arrière, sauvegarder : [guide de déploiement](deploy-guide.md).
