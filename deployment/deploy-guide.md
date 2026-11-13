@@ -221,12 +221,47 @@ Puis le [test de fumée](#vérifier-après-déploiement-test-de-fumée).
 
 Les données perdues au plus sont celles saisies depuis la dernière sauvegarde, soit une journée. La restauration elle-même dure moins d'une seconde au volume de la recette, plus le redémarrage de l'API.
 
+### Évolution prête, non fusionnée
+
+Le test du 13/11/2026 a aussi montré les faiblesses de cette sauvegarde : la tâche a été posée à la main, les sauvegardes restent sur le disque du serveur, elles sont lisibles par tous ses comptes, et un `pg_dump` qui échoue peut laisser un fichier tronqué sous un nom valide. Elles sont corrigées sur la branche [`chore/reliable-backups`](https://github.com/Grand-Cinema-Studi/grand-cinema-backend/tree/chore/reliable-backups/deploy) du backend (issue «Fiabiliser la sauvegarde de la base de la recette »).
+
+**Cette branche n'est pas fusionnée pendant l'évaluation** : la recette reste exactement celle qui a été évaluée et recettée (v1.0.0). Elle le sera ensuite, par Pull Request vers `dev`, comme toute évolution.
+
+Une fois fusionnée, chaque déploiement installera :
+
+- `deploy/backup.sh` comme tâche quotidienne : export écrit sous un nom temporaire et vérifié (`gzip --test`) avant d'être gardé ; sauvegardes lisibles par `root` seul ; huit sauvegardes sur le serveur ; copie de chacune dans le bucket privé `grand-cinema-recette-backups-2026`, dès que le paramètre `/grandcinema/recette/backups-bucket` existe ;
+- `deploy/restore-test.sh`, le test de restauration ci-dessus en une commande (`sudo /opt/grandcinema/restore-test.sh`), qui supprime sa base de test même en cas d'erreur. Il sera alors rejoué après chaque release.
+
+**Mise en place dans AWS, au moment de la fusion :**
+
+1. **S3 → Create bucket** : `grand-cinema-recette-backups-2026`, région `eu-west-3`, « Block all public access » coché, chiffrement par défaut (SSE-S3).
+2. Dans le bucket, onglet **Management → Create lifecycle rule** : `expire-after-30-days`, préfixe `database/`, « Expire current versions of objects » après 30 jours.
+3. **IAM → Roles → `grandcinema-ec2-role` → Add permissions → Create inline policy**, nommée `grand-cinema-recette-backups-write` :
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Action": "s3:PutObject",
+         "Resource": "arn:aws:s3:::grand-cinema-recette-backups-2026/database/*"
+       }
+     ]
+   }
+   ```
+
+4. **Systems Manager → Parameter Store → Create parameter** : `/grandcinema/recette/backups-bucket`, type `String` (rien de secret), valeur `grand-cinema-recette-backups-2026`.
+5. Vérifier : `sudo /etc/cron.daily/grandcinema-backup` affiche « written and copied to s3://grand-cinema-recette-backups-2026/database/ », puis `sudo /opt/grandcinema/restore-test.sh` affiche « Result: identical. ».
+
+Le serveur ne pourra qu'**ajouter** une sauvegarde au bucket : ni la lire, ni lister le bucket, ni supprimer quoi que ce soit, comme pour les affiches. Une intrusion sur le serveur ne pourra donc pas effacer les copies ; seule la règle de cycle de vie les supprimera, après 30 jours. Si le serveur est perdu, une personne habilitée crée dans la console S3 une adresse pré-signée de courte durée (**Object actions → Share with a presigned URL**) ; le nouveau serveur télécharge la sauvegarde avec `curl`, puis on suit la restauration ci-dessus.
+
 ## Limites de l'hébergement retenu pour le projet
 
 | Limite | Conséquence | Évolution (architecture cible du Bloc 1) |
 |---|---|---|
 | Un seul serveur pour l'API | s'il tombe, l'API est indisponible le temps de le relancer ; pas de montée en charge automatique | Auto Scaling derrière un répartiteur de charge |
-| Base en conteneur, sauvegardes sur le serveur | jusqu'à une journée de données perdues ; aucune protection si le serveur est perdu | RDS : sauvegardes automatiques et restauration à un instant précis |
+| Base en conteneur, sauvegardes sur le serveur | jusqu'à une journée de données perdues ; aucune protection si le serveur est perdu (copie hors du serveur prête sur une branche) | RDS : sauvegardes automatiques et restauration à un instant précis |
 | HTTP entre CloudFront et le serveur | le jeton d'authentification circule en clair sur ce tronçon ; le serveur n'accepte que les adresses de CloudFront | nom de domaine, certificat et répartiteur de charge : HTTPS de bout en bout (critère de mise en production) |
 | Adresse `*.cloudfront.net`, pas de nom de domaine | adresse peu lisible pour le public | nom de domaine du cinéma |
 | Pas de préproduction montée | les critères propres à la préproduction (scan ZAP, test de charge JMeter) sont décrits mais pas exécutés sur un environnement identique à la production | préproduction allumée pour chaque release |
