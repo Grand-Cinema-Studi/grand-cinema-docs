@@ -143,26 +143,83 @@ Puis, dans un navigateur : la page d'accueil du front (la nouvelle version s'aff
 
 ### Sauvegarde
 
-En recette : une tâche quotidienne (`/etc/cron.daily/grandcinema-backup`) exporte la base avec `pg_dump`, compressée, dans `/opt/grandcinema/backups` ; les sept dernières sont conservées. En production (cible) : sauvegardes automatiques de RDS.
+En recette : une tâche quotidienne (`/etc/cron.daily/grandcinema-backup`) exporte la base avec `pg_dump`, compressée, dans `/opt/grandcinema/backups`, chaque nuit entre 3 h et 4 h. Les fichiers de plus de sept jours sont supprimés : le serveur garde donc huit sauvegardes, celle du jour et les sept précédentes. En production (cible) : sauvegardes automatiques de RDS.
+
+```bash
+#!/bin/bash
+# Daily dump of the acceptance database, kept 7 days
+set -euo pipefail
+cd /opt/grandcinema
+docker compose exec -T db pg_dump -U sly grandcinemadb | gzip > backups/grandcinema-$(date +%F).sql.gz
+find backups -name '*.sql.gz' -mtime +7 -delete
+```
+
+Cette tâche a été posée à la main sur le serveur : `deploy.sh` ne l'installe pas. Un nouveau serveur doit donc la recevoir de la même façon.
 
 Les affiches des films (US 5.6) ne sont pas dans la base : elles sont dans le bucket S3, dont la durabilité est gérée par AWS. Une base restaurée retrouve donc ses affiches, puisque l'API n'en supprime jamais (elle n'en a pas le droit).
 
 Limite : en recette, ces sauvegardes sont sur le disque du serveur. Elles protègent d'une erreur de manipulation, pas de la perte du serveur. Avant toute opération risquée et avant la fin de la période gratuite d'AWS, la dernière sauvegarde est récupérée hors du serveur.
 
-### Restauration
+### Tester la restauration, sans coupure
 
-**À tester avant la mise en production** (critère bloquant), sur une copie :
+Le critère de mise en production « une restauration a été testée » se vérifie sans toucher à la base en service : on restaure une sauvegarde dans une base à part, on la compare à la base en service, puis on la supprime. Depuis une session Session Manager sur le serveur :
 
 ```bash
 cd /opt/grandcinema
+
+# 1. Une base à part
+sudo docker compose exec -T db createdb -U sly grandcinemadb_restore_test
+
+# 2. Restaurer la sauvegarde choisie, en mesurant la durée ; aucune ligne ERROR attendue
+time (gunzip -c backups/grandcinema-<AAAA-MM-JJ>.sql.gz | sudo docker compose exec -T db psql -U sly -d grandcinemadb_restore_test -v ON_ERROR_STOP=1 -q)
+
+# 3. Comparer les deux bases
+sudo docker compose exec -T db psql -U sly -d grandcinemadb_restore_test -c '\dt'
+Q='SELECT (SELECT count(*) FROM "__EFMigrationsHistory") AS migrations, (SELECT count(*) FROM "Users") AS users, (SELECT count(*) FROM "Screenings") AS screenings, (SELECT count(*) FROM "Reservations") AS reservations, (SELECT count(*) FROM "ReservedSeats") AS reserved_seats;'
+sudo docker compose exec -T db psql -U sly -d grandcinemadb_restore_test -c "$Q"
+sudo docker compose exec -T db psql -U sly -d grandcinemadb -c "$Q"
+
+# 4. Supprimer la base de test
+sudo docker compose exec -T db dropdb -U sly grandcinemadb_restore_test
+```
+
+Les deux comptages doivent être identiques, sauf pour ce qui a été saisi dans la recette depuis l'heure de la sauvegarde.
+
+#### Test du 13/11/2026
+
+| Élément | Résultat |
+|---|---|
+| Sauvegarde restaurée | `grandcinema-2026-11-13.sql.gz` (228 Ko), faite à 3 h 45 |
+| Durée de la restauration | 0,7 s |
+| Tables restaurées | les 7 tables du modèle de données et l'historique des migrations |
+| Comparaison avec la base en service | identique : 10 migrations, 5 utilisateurs, 2 552 séances, 64 réservations, 6 449 places réservées |
+| Conclusion | critère « sauvegarde automatique active et restauration testée » respecté pour la recette |
+
+![Durée de la restauration](images/backup/01-restore-duration.png)
+
+![Comparaison de la base restaurée et de la base en service](images/backup/02-restore-comparison.png)
+
+### Restaurer après un incident (avec coupure)
+
+Cette procédure remplace la base en service : l'API est arrêtée pendant la restauration.
+
+```bash
+cd /opt/grandcinema
+
+# 1. Garder l'état actuel, même abîmé, sous un nom que la tâche quotidienne n'écrase pas
+sudo docker compose exec -T db pg_dump -U sly grandcinemadb | gzip | sudo tee backups/before-restore-$(date +%F-%H%M).sql.gz > /dev/null
+
+# 2. Arrêter l'API, recréer la base, restaurer, redémarrer
 sudo docker compose stop api
-sudo docker compose exec -T db dropdb -U grandcinema grandcinema
-sudo docker compose exec -T db createdb -U grandcinema grandcinema
-gunzip -c backups/grandcinema-<AAAA-MM-JJ>.sql.gz | sudo docker compose exec -T db psql -U grandcinema -d grandcinema
+sudo docker compose exec -T db dropdb -U sly grandcinemadb
+sudo docker compose exec -T db createdb -U sly grandcinemadb
+gunzip -c backups/grandcinema-<AAAA-MM-JJ>.sql.gz | sudo docker compose exec -T db psql -U sly -d grandcinemadb -v ON_ERROR_STOP=1 -q
 sudo docker compose start api
 ```
 
-Les données perdues au plus sont celles saisies depuis la dernière sauvegarde, soit une journée.
+Puis le [test de fumée](#vérifier-après-déploiement-test-de-fumée).
+
+Les données perdues au plus sont celles saisies depuis la dernière sauvegarde, soit une journée. La restauration elle-même dure moins d'une seconde au volume de la recette, plus le redémarrage de l'API.
 
 ## Limites de l'hébergement retenu pour le projet
 
